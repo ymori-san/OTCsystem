@@ -36,7 +36,7 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        .drop-zone.dragover { background-color: #ffec99; border-color: d9480f; }
+        .drop-zone.dragover { background-color: #ffec99; border-color: #d9480f; }
         .drop-zone p { margin: 0; font-weight: bold; color: #666; }
         .drop-zone span { font-size: 13px; color: #888; }
         
@@ -124,6 +124,10 @@
                     data.items.forEach(item => {
                         productCache[item.jan] = item;
                     });
+                    
+                    // ⭐️ ここで値札作成ツールと共有するために localStorage にデータを保存する
+                    localStorage.setItem("hatchu_products", JSON.stringify(data.items));
+
                     updateMasterSuggestList();
                 } else {
                     alert("データの取得に失敗しました: " + data.message);
@@ -268,7 +272,7 @@
                     if (resData.status === "success") {
                         alert(`${resData.count}件のデータをスプレッドシートに同期しました！`);
                         fileInput.value = "";
-                        loadMasterData(); // 最新データを再読み込み
+                        loadMasterData(); // 最新データを再読み込み（ここでlocalStorageも自動更新されます）
                     } else {
                         alert("同期に失敗しました: " + resData.message);
                     }
