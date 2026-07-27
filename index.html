@@ -196,7 +196,7 @@
             const t = db.transaction("orders", "readwrite");
             const store = t.objectStore("orders");
             
-            const request = store.add({
+            store.add({
                 itemName: name, 
                 wholesaler: wholesaler, 
                 quantity: qty, 
@@ -236,7 +236,6 @@
             currentPrintingWholesaler = w;
             const printArea = document.getElementById("printArea");
             
-            // データを全件取得
             const allOrders = await new Promise(resolve => {
                 let list = [];
                 db.transaction("orders", "readonly").objectStore("orders").openCursor().onsuccess = e => {
@@ -248,7 +247,6 @@
                 };
             });
 
-            // 注文データに紐づく原価(costPrice)を取得して計算
             let total = 0;
             let orderRows = "";
             
