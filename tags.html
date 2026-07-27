@@ -124,11 +124,21 @@
 
     <script>
         let db;
-        const request = indexedDB.open("HatchuDB", 26);
+        // index.html等とデータベースのバージョン差異による不具合を防ぐため、バージョン指定を撤廃（または最新を開く）
+        const request = indexedDB.open("HatchuDB");
         
         request.onsuccess = e => {
             db = e.target.result;
+            loadMasterList();
+        };
+
+        request.onerror = e => {
+            console.error("データベースを開けませんでした", e);
+        };
+
+        function loadMasterList() {
             const datalist = document.getElementById("masterList");
+            datalist.innerHTML = "";
             const tx = db.transaction("products", "readonly");
             tx.objectStore("products").openCursor().onsuccess = ev => {
                 const c = ev.target.result;
@@ -140,7 +150,7 @@
                     c.continue();
                 }
             };
-        };
+        }
 
         function addTags() {
             const nameInput = document.getElementById('nameSearch');
