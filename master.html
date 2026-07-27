@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>商品マスタ管理</title>
+    <title>商品マスタ管理（クラウド版）</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <!-- SheetJS (Excel読み込み用ライブラリ) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -18,6 +18,14 @@
         .btn-csv { background-color: #28a745; margin-top: 10px; }
         .master-item { padding: 10px; border-bottom: 1px solid #f1f3f5; display: flex; justify-content: space-between; align-items: center; }
         
+        /* ロック画面用スタイル */
+        #authOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 9999;
+        }
+        .auth-box { background: white; padding: 30px; border-radius: 8px; text-align: center; width: 300px; }
+        .auth-box input { width: 100%; padding: 10px; margin: 15px 0; box-sizing: border-box; font-size: 16px; }
+
         /* ドラッグ＆ドロップエリアのスタイル */
         .drop-zone {
             border: 2px dashed #e28743;
@@ -28,32 +36,37 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        .drop-zone.dragover {
-            background-color: #ffec99;
-            border-color: #d9480f;
-        }
-        .drop-zone p {
-            margin: 0;
-            font-weight: bold;
-            color: #666;
-        }
-        .drop-zone span {
-            font-size: 13px;
-            color: #888;
-        }
+        .drop-zone.dragover { background-color: #ffec99; border-color: d9480f; }
+        .drop-zone p { margin: 0; font-weight: bold; color: #666; }
+        .drop-zone span { font-size: 13px; color: #888; }
+        
+        /* ローディング表示 */
+        #loading { display: none; color: #e28743; font-weight: bold; text-align: center; margin: 10px 0; }
     </style>
 </head>
 <body>
 
-<div class="container">
+<!-- 🔐 パスワード認証画面 -->
+<div id="authOverlay">
+    <div class="auth-box">
+        <h2>🔒 社内認証</h2>
+        <p style="font-size: 13px; color: #666;">パスワードを入力してください</p>
+        <input type="password" id="passwordInput" placeholder="パスワード">
+        <button onclick="checkPassword()">ログイン</button>
+        <p id="authError" style="color: red; font-size: 12px; margin-top: 10px; display: none;">パスワードが違います</p>
+    </div>
+</div>
+
+<div class="container" id="mainContent" style="display: none;">
     <div class="card">
         <h1>📸 カメラでJAN読み取り</h1>
         <div id="reader"></div>
-        <input type="text" id="manualJan" placeholder="読み取ったJANがここに表示されます" style="width:100%; padding:10px; margin-top:10px; box-sizing:border-box;">
+        <input type="text" id="manualJan" placeholder="読み取ったJANがここに表示されます" style="width:100%; padding:10px; margin-top:10px; box-sizing:border-box;" onchange="searchAndShow(this.value)">
     </div>
 
     <div class="card">
         <h2>📋 データの管理と出力</h2>
+        <div id="loading">🔄 クラウドと通信中...</div>
         <!-- ドラッグ＆ドロップ用エリア -->
         <div id="dropZone" class="drop-zone">
             <p>📁 Excel(.xlsx) または CSVファイルをここにドラッグ＆ドロップ</p>
@@ -65,26 +78,63 @@
 
     <div class="card">
         <h2>🔍 登録済みマスタ</h2>
-        <div id="masterCount">登録件数：計算中...</div>
+        <div id="masterCount">登録件数：読み込み中...</div>
         <div id="masterItemsList"></div>
     </div>
 </div>
 
 <script>
-    let db;
-    const request = indexedDB.open("HatchuDB", 26);
+    // ----------------------------------------------------
+    // ⚠️ 設定：ご自身のGASのウェブアプリURLをここに貼り付けてください
+    // ----------------------------------------------------
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzIfiUFfCYIIXno-ljlLD7G1jcdv9dlUXuXu2XJJY0_HlMKNtJd8V1xpUI6uu5CynsgvA/exec"; 
 
-    request.onupgradeneeded = (e) => {
-        let db = e.target.result;
-        if (!db.objectStoreNames.contains("products")) {
-            db.createObjectStore("products", { keyPath: "jan" });
+    // 🔐 設定：社内用の合言葉（パスワード）を設定してください
+    const ACCESS_PASSWORD = "Okenko.OTC"; 
+
+    let productCache = {}; // メモリ上の商品データ保持用
+
+    function checkPassword() {
+        const input = document.getElementById("passwordInput").value;
+        if (input === ACCESS_PASSWORD) {
+            document.getElementById("authOverlay").style.display = "none";
+            document.getElementById("mainContent").style.display = "block";
+            loadMasterData(); // データ読み込み開始
+        } else {
+            document.getElementById("authError").style.display = "block";
         }
-    };
+    }
 
-    request.onsuccess = (e) => {
-        db = e.target.result;
-        updateMasterSuggestList();
-    };
+    // Enterキーでもログインできるようにする
+    document.getElementById("passwordInput").addEventListener("keypress", (e) => {
+        if (e.key === "Enter") checkPassword();
+    });
+
+    // スプレッドシートから全データを取得
+    function loadMasterData() {
+        const loading = document.getElementById("loading");
+        loading.style.display = "block";
+
+        fetch(GAS_API_URL)
+            .then(res => res.json())
+            .then(data => {
+                loading.style.display = "none";
+                if (data.status === "success") {
+                    productCache = {};
+                    data.items.forEach(item => {
+                        productCache[item.jan] = item;
+                    });
+                    updateMasterSuggestList();
+                } else {
+                    alert("データの取得に失敗しました: " + data.message);
+                }
+            })
+            .catch(err => {
+                loading.style.display = "none";
+                console.error(err);
+                alert("サーバーとの通信に失敗しました。URLやネットワークを確認してください。");
+            });
+    }
 
     // カメラ読み取り
     const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
@@ -94,32 +144,40 @@
     });
 
     function searchAndShow(jan) {
-        db.transaction(["products"], "readonly").objectStore("products").get(jan).onsuccess = (e) => {
-            const item = e.target.result;
-            alert(item ? `発見: ${item.itemName} (売価: ¥${item.sellingPrice.toLocaleString()})` : "未登録商品です");
-        };
+        const cleanJan = jan.trim();
+        const item = productCache[cleanJan];
+        alert(item ? `発見: ${item.itemName} (売価: ¥${Number(item.sellingPrice).toLocaleString()})` : "未登録商品です");
+    }
+
+    function updateMasterSuggestList() {
+        const list = document.getElementById("masterItemsList");
+        const countDiv = document.getElementById("masterCount");
+        list.innerHTML = "";
+        
+        const keys = Object.keys(productCache);
+        keys.forEach(jan => {
+            const item = productCache[jan];
+            list.innerHTML += `<div class="master-item"><span>${item.itemName} (${jan})</span><span>¥${Number(item.sellingPrice).toLocaleString()}</span></div>`;
+        });
+        countDiv.innerText = `登録件数：${keys.length} 件`;
     }
 
     function downloadCSV() {
-        const store = db.transaction(["products"], "readonly").objectStore("products");
-        store.getAll().onsuccess = (e) => {
-            const items = e.target.result;
-            let csv = "JAN,商品名,値札用商品名,発注先,税率,納入価,小売希望価格,売価,商品区分,用途\n";
-            items.forEach(item => {
-                const cleanItemName = (item.itemName || "").replace(/[\r\n]+/g, ' ');
-                const cleanPriceTagName = (item.priceTagItemName || item.itemName || "").replace(/[\r\n]+/g, ' ');
-                const cleanWholesaler = (item.wholesaler || "").replace(/[\r\n]+/g, ' ');
-                const cleanCategory = (item.category || "").replace(/[\r\n]+/g, ' ');
-                const cleanNote = (item.note || "").replace(/[\r\n]+/g, ' ');
+        let csv = "JAN,商品名,値札用商品名,発注先,税率,納入価,小売希望価格,売価,商品区分,用途\n";
+        Object.values(productCache).forEach(item => {
+            const cleanItemName = (item.itemName || "").replace(/[\r\n]+/g, ' ');
+            const cleanPriceTagName = (item.priceTagItemName || item.itemName || "").replace(/[\r\n]+/g, ' ');
+            const cleanWholesaler = (item.wholesaler || "").replace(/[\r\n]+/g, ' ');
+            const cleanCategory = (item.category || "").replace(/[\r\n]+/g, ' ');
+            const cleanNote = (item.note || "").replace(/[\r\n]+/g, ' ');
 
-                csv += `${item.jan},${cleanItemName},${cleanPriceTagName},${cleanWholesaler},${item.taxRate},${item.costPrice},${item.listPrice || 0},${item.sellingPrice},${cleanCategory},${cleanNote}\n`;
-            });
-            const blob = new Blob(['\uFEFF' + csv], { type: "text/csv;charset=utf-8;" });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "master_data.csv";
-            link.click();
-        };
+            csv += `${item.jan},${cleanItemName},${cleanPriceTagName},${cleanWholesaler},${item.taxRate},${item.costPrice},${item.listPrice || 0},${item.sellingPrice},${cleanCategory},${cleanNote}\n`;
+        });
+        const blob = new Blob(['\uFEFF' + csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "master_data.csv";
+        link.click();
     }
 
     function forceNumeric(val) {
@@ -133,55 +191,32 @@
     const fileInput = document.getElementById("fileInput");
 
     dropZone.addEventListener("click", () => fileInput.click());
-
-    dropZone.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        dropZone.classList.add("dragover");
-    });
-
-    dropZone.addEventListener("dragleave", () => {
-        dropZone.classList.remove("dragover");
-    });
-
+    dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.classList.add("dragover"); });
+    dropZone.addEventListener("dragleave", () => { dropZone.classList.remove("dragover"); });
     dropZone.addEventListener("drop", (e) => {
         e.preventDefault();
         dropZone.classList.remove("dragover");
-        if (e.dataTransfer.files.length > 0) {
-            handleFile(e.dataTransfer.files[0]);
-        }
+        if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
     });
-
     fileInput.addEventListener("change", (e) => {
-        if (e.target.files.length > 0) {
-            handleFile(e.target.files[0]);
-        }
+        if (e.target.files.length > 0) handleFile(e.target.files[0]);
     });
 
-    // ファイルを解析してIndexedDBに登録する処理
+    // ファイルを解析してGAS経由でスプレッドシートに送信する処理
     function handleFile(file) {
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
-                
-                // 1番目のシートを対象にする
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
-                
-                // 2次元配列に変換（ヘッダー行を含む）
                 const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                 
-                const transaction = db.transaction(["products"], "readwrite");
-                const store = transaction.objectStore("products");
-                
-                let importedCount = 0;
+                let itemsToSend = [];
 
                 rows.forEach((cols, index) => {
-                    // ヘッダー行（1行目）や空行をスキップする条件
-                    if (index === 0 && (isNaN(cols[0]) || cols[0].toString().length < 8)) {
-                        return;
-                    }
+                    if (index === 0 && (isNaN(cols[0]) || cols[0].toString().length < 8)) return;
                     if (cols.length < 2 || !cols[0]) return;
 
                     const jan = cols[0].toString().trim();
@@ -189,14 +224,13 @@
                     const priceTagItemName = (cols[2] || "").toString().trim() || itemName;
                     const wholesaler = (cols[3] || "").toString().trim();
                     
-                    // 税率の判定
                     const taxRaw = (cols[4] || "").toString();
                     const taxRate = taxRaw.includes("8") ? 8 : 10;
                     
-                    const cost = forceNumeric(cols[5] || 0);         // 納入価（税抜）
-                    const listPrice = forceNumeric(cols[6] || 0);   // メーカー小売希望価格（税抜）
-                    const manualSelling = forceNumeric(cols[7] || 0); // 直接入力された売価
-                    const category = (cols[8] || "").toString().trim(); // 商品区分（新設）
+                    const cost = forceNumeric(cols[5] || 0);
+                    const listPrice = forceNumeric(cols[6] || 0);
+                    const manualSelling = forceNumeric(cols[7] || 0);
+                    const category = (cols[8] || "").toString().trim();
 
                     let selling = 0;
                     if (manualSelling > 0) {
@@ -207,53 +241,50 @@
                         selling = (listBasedSelling > costBasedSelling) ? listBasedSelling : costBasedSelling;
                     }
 
-                    store.put({ 
-                        jan, 
-                        itemName, 
-                        priceTagItemName,
-                        wholesaler, 
-                        taxRate, 
-                        costPrice: cost, 
-                        listPrice,
-                        sellingPrice: selling, 
-                        category, // 保存データに追加
-                        note: (cols[9] || "").toString().trim() // 用途宣伝はcols[9]へ
+                    itemsToSend.push({
+                        jan, itemName, priceTagItemName, wholesaler, taxRate,
+                        costPrice: cost, listPrice, sellingPrice: selling,
+                        category, note: (cols[9] || "").toString().trim()
                     });
-                    importedCount++;
                 });
 
-                transaction.oncomplete = () => {
-                    alert(`${importedCount}件のデータをインポートしました！`);
-                    updateMasterSuggestList();
-                    fileInput.value = ""; // 入力をリセット
-                };
+                if (itemsToSend.length === 0) {
+                    alert("有効なデータが見つかりませんでした。");
+                    return;
+                }
+
+                // GASへPOST送信
+                const loading = document.getElementById("loading");
+                loading.innerText = "🔄 スプレッドシートへ同期中...";
+                loading.style.display = "block";
+
+                fetch(GAS_API_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ action: "save", items: itemsToSend })
+                })
+                .then(res => res.json())
+                .then(resData => {
+                    loading.style.display = "none";
+                    if (resData.status === "success") {
+                        alert(`${resData.count}件のデータをスプレッドシートに同期しました！`);
+                        fileInput.value = "";
+                        loadMasterData(); // 最新データを再読み込み
+                    } else {
+                        alert("同期に失敗しました: " + resData.message);
+                    }
+                })
+                .catch(err => {
+                    loading.style.display = "none";
+                    console.error(err);
+                    alert("通信エラーが発生しました。");
+                });
+
             } catch (err) {
                 console.error(err);
                 alert("ファイルの読み込みに失敗しました。正しいExcel/CSVファイルか確認してください。");
             }
         };
         reader.readAsArrayBuffer(file);
-    }
-
-    function updateMasterSuggestList() {
-        const list = document.getElementById("masterItemsList");
-        const countDiv = document.getElementById("masterCount");
-        list.innerHTML = "";
-        let count = 0;
-        
-        const transaction = db.transaction(["products"], "readonly");
-        const store = transaction.objectStore("products");
-        
-        store.openCursor().onsuccess = (e) => {
-            const cursor = e.target.result;
-            if (cursor) {
-                count++;
-                list.innerHTML += `<div class="master-item"><span>${cursor.value.itemName}</span><span>¥${cursor.value.sellingPrice.toLocaleString()}</span></div>`;
-                cursor.continue();
-            } else {
-                countDiv.innerText = `登録件数：${count} 件`;
-            }
-        };
     }
 </script>
 </body>
