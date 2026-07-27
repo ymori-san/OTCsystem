@@ -24,7 +24,6 @@
         ul { list-style: none; padding: 0; }
         li { background: #eee; margin-bottom: 5px; padding: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
         .item-info { display: flex; flex-direction: column; }
-        .item-meta { font-size: 12px; color: #666; margin-top: 4px; }
         .btn-delete { background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; width: auto; font-size: 14px; margin: 0; }
         .btn-delete:hover { background-color: #bd2130; }
         .log-section { background-color: #e3fafc; border: 1px solid #c5f6fa; }
@@ -82,7 +81,7 @@
                 </form>
                 <h2>現在の発注待ちリスト</h2>
                 <ul id="orderList"></ul>
-                <div id="printSection">
+                <div id="printSection" style="display:none;">
                     <h2>発注内容の印刷</h2>
                     <div class="wholesaler-grid" id="printButtons"></div>
                 </div>
@@ -109,12 +108,11 @@
     <script>
         let currentPrintingWholesaler = null;
         
-        // LocalStorage keys
-        const STORAGE_KEY_PRODUCTS = "Hatchu_Products";
+        // 値札作成システム側とキー名を統一
+        const STORAGE_KEY_PRODUCTS = "hatchu_products";
         const STORAGE_KEY_ORDERS = "Hatchu_Orders";
         const STORAGE_KEY_LOGS = "Hatchu_Logs";
 
-        // 初期化とロード
         window.addEventListener("DOMContentLoaded", () => {
             initStorageData();
             displayData();
@@ -125,8 +123,8 @@
         function initStorageData() {
             if (!localStorage.getItem(STORAGE_KEY_PRODUCTS)) {
                 localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify([
-                    { jan: "1111111111111", itemName: "ソフトサンティア", wholesaler: "ダイコー", costPrice: 500 },
-                    { jan: "2222222222222", itemName: "ロートVロート", wholesaler: "信公", costPrice: 1200 }
+                    { jan: "1111111111111", itemName: "ソフトサンティア", wholesaler: "ダイコー", costPrice: 500, sellingPrice: 800 },
+                    { jan: "2222222222222", itemName: "ロートVロート", wholesaler: "信公", costPrice: 1200, sellingPrice: 1500 }
                 ]));
             }
             if (!localStorage.getItem(STORAGE_KEY_ORDERS)) {
@@ -166,7 +164,7 @@
         function translateHanToZen(str) {
             if (!str) return "";
             const kanaMap = {'ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ','ｶ':'カ','ｷ':'キ','ｸ':'ク','ｹ':'ケ','ｺ':'コ','ｻ':'サ','ｼ':'シ','ｽ':'ス','ｾ':'セ','ｿ':'ソ','ﾀ':'タ','ﾁ':'チ','ﾂ':'ツ','ﾃ':'テ','ﾄ':'ト','ﾅ':'ナ','ﾆ':'ニ','ﾇ':'ヌ','ﾈ':'ネ','ﾉ':'ノ','ﾊ':'ハ','ﾋ':'ヒ','ﾌ':'フ','ﾍ':'ヘ','ﾎ':'ホ','ﾏ':'マ','ﾐ':'ミ','ﾑ':'ム','ﾒ':'メ','ﾓ':'モ','ﾔ':'ヤ','ﾕ':'ユ','ﾖ':'ヨ','ﾗ':'ラ','ﾘ':'リ','ﾙ':'ル','ﾚ':'レ','ﾛ':'ロ','ﾜ':'ワ','ｦ':'ヲ','ﾝ':'ン','ｧ':'ァ','ｨ':'ィ','ｩ':'ゥ','ｪ':'ェ','ｫ':'ォ','ｬ':'ャ','ｭ':'ュ','ｮ':'ョ','ｯ':'ッ','ｰ':'ー','ﾞ':'゛','ﾟ':'゜'};
-            return str.replace(/[ｱ-ﾝｧ-ｫｬ-ｮｯｰﾞﾟ]/g, s => kanaMap[s] || s).replace(/（|）/g, s => s === '（' ? '(' : ')');
+            return str.replace(/[ｱ-ﾝｧ-ｫｬ-ｮｯｰﾞﾟ]/g, s => kanaMap[s] || s);
         }
 
         function updateMasterSuggestList() {
@@ -180,9 +178,12 @@
             
             let count = 0;
             products.forEach(p => {
-                datalist.innerHTML += `<option value="${p.itemName}">`;
-                if (keyword === "" || translateHanToZen(p.itemName).toLowerCase().includes(keyword)) {
-                    itemsListDiv.innerHTML += `<div class="master-item"><strong>${p.itemName}</strong> <span style="color:#666; font-size:12px;">(${p.wholesaler || '未設定'})</span></div>`;
+                const name = (p.itemName || "").trim();
+                if (!name) return;
+                
+                datalist.innerHTML += `<option value="${name}">`;
+                if (keyword === "" || translateHanToZen(name).toLowerCase().includes(keyword)) {
+                    itemsListDiv.innerHTML += `<div class="master-item"><strong>${name}</strong> <span style="color:#666; font-size:12px;">(${p.wholesaler || '未設定'})</span></div>`;
                     count++;
                 }
             });
@@ -193,7 +194,7 @@
             let name = document.getElementById("itemName").value.trim();
             if (!name) return;
             let products = getProducts();
-            let found = products.find(p => p.itemName === name);
+            let found = products.find(p => (p.itemName || "").trim() === name);
             if (found) {
                 document.getElementById("itemWholesaler").value = found.wholesaler || "";
             }
@@ -279,8 +280,8 @@
             let orderRows = "";
 
             targetOrders.forEach(item => {
-                let prod = products.find(p => p.itemName === item.itemName);
-                let cost = prod && prod.costPrice ? prod.costPrice : 0;
+                let prod = products.find(p => (p.itemName || "").trim() === item.itemName);
+                let cost = prod && prod.costPrice ? Number(prod.costPrice) : 0;
                 let subtotal = cost * item.quantity;
                 total += subtotal;
 
