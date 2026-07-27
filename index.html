@@ -107,20 +107,61 @@
     <div id="printArea"></div>
 
     <script>
-        let db;
         let currentPrintingWholesaler = null;
         
-        const request = indexedDB.open("HatchuDB", 26);
-        request.onupgradeneeded = event => {
-            let db = event.target.result;
-            if (!db.objectStoreNames.contains("products")) db.createObjectStore("products", { keyPath: "jan" });
-            if (!db.objectStoreNames.contains("orders")) db.createObjectStore("orders", { keyPath: "id", autoIncrement: true });
-            if (!db.objectStoreNames.contains("logs")) db.createObjectStore("logs", { keyPath: "id", autoIncrement: true });
-        };
-        request.onsuccess = event => {
-            db = event.target.result;
-            displayData(); updateMasterSuggestList(); displayLogs();
-        };
+        // LocalStorage keys
+        const STORAGE_KEY_PRODUCTS = "Hatchu_Products";
+        const STORAGE_KEY_ORDERS = "Hatchu_Orders";
+        const STORAGE_KEY_LOGS = "Hatchu_Logs";
+
+        // 初期化とロード
+        window.addEventListener("DOMContentLoaded", () => {
+            initStorageData();
+            displayData();
+            updateMasterSuggestList();
+            displayLogs();
+        });
+
+        function initStorageData() {
+            if (!localStorage.getItem(STORAGE_KEY_PRODUCTS)) {
+                localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify([
+                    { jan: "1111111111111", itemName: "ソフトサンティア", wholesaler: "ダイコー", costPrice: 500 },
+                    { jan: "2222222222222", itemName: "ロートVロート", wholesaler: "信公", costPrice: 1200 }
+                ]));
+            }
+            if (!localStorage.getItem(STORAGE_KEY_ORDERS)) {
+                localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify([]));
+            }
+            if (!localStorage.getItem(STORAGE_KEY_LOGS)) {
+                localStorage.setItem(STORAGE_KEY_LOGS, JSON.stringify([]));
+            }
+        }
+
+        function getProducts() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_KEY_PRODUCTS)) || [];
+            } catch(e) { return []; }
+        }
+
+        function getOrders() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_KEY_ORDERS)) || [];
+            } catch(e) { return []; }
+        }
+
+        function saveOrders(orders) {
+            localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(orders));
+        }
+
+        function getLogs() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_KEY_LOGS)) || [];
+            } catch(e) { return []; }
+        }
+
+        function saveLogs(logs) {
+            localStorage.setItem(STORAGE_KEY_LOGS, JSON.stringify(logs));
+        }
 
         function translateHanToZen(str) {
             if (!str) return "";
@@ -129,60 +170,54 @@
         }
 
         function updateMasterSuggestList() {
-            const datalist = document.getElementById("masterList"), itemsListDiv = document.getElementById("masterItemsList");
-            datalist.innerHTML = ""; itemsListDiv.innerHTML = "";
+            const datalist = document.getElementById("masterList");
+            const itemsListDiv = document.getElementById("masterItemsList");
+            datalist.innerHTML = "";
+            itemsListDiv.innerHTML = "";
+            
             let keyword = translateHanToZen(document.getElementById("masterSearchInput").value.trim()).toLowerCase();
+            let products = getProducts();
             
             let count = 0;
-            db.transaction("products", "readonly").objectStore("products").openCursor().onsuccess = e => {
-                const cursor = e.target.result;
-                if (cursor) {
-                    datalist.innerHTML += `<option value="${cursor.value.itemName}">`;
-                    if (keyword === "" || translateHanToZen(cursor.value.itemName).toLowerCase().includes(keyword)) {
-                        itemsListDiv.innerHTML += `<div class="master-item"><strong>${cursor.value.itemName}</strong> <span style="color:#666; font-size:12px;">(${cursor.value.wholesaler || '未設定'})</span></div>`;
-                        count++;
-                    }
-                    cursor.continue();
-                } else { 
-                    document.getElementById("masterCount").innerText = "登録件数：" + count + " 件"; 
+            products.forEach(p => {
+                datalist.innerHTML += `<option value="${p.itemName}">`;
+                if (keyword === "" || translateHanToZen(p.itemName).toLowerCase().includes(keyword)) {
+                    itemsListDiv.innerHTML += `<div class="master-item"><strong>${p.itemName}</strong> <span style="color:#666; font-size:12px;">(${p.wholesaler || '未設定'})</span></div>`;
+                    count++;
                 }
-            };
+            });
+            document.getElementById("masterCount").innerText = "登録件数：" + count + " 件";
         }
 
         function autoFill() {
             let name = document.getElementById("itemName").value.trim();
             if (!name) return;
-            db.transaction("products", "readonly").objectStore("products").openCursor().onsuccess = e => {
-                const cursor = e.target.result;
-                if (cursor) {
-                    if (cursor.value.itemName === name) {
-                        document.getElementById("itemWholesaler").value = cursor.value.wholesaler || "";
-                        return;
-                    }
-                    cursor.continue();
-                }
-            };
+            let products = getProducts();
+            let found = products.find(p => p.itemName === name);
+            if (found) {
+                document.getElementById("itemWholesaler").value = found.wholesaler || "";
+            }
         }
 
         function updatePrintButtons() {
             const container = document.getElementById("printButtons");
             const section = document.getElementById("printSection");
+            let orders = getOrders();
             let wholesalers = new Set();
-            db.transaction("orders", "readonly").objectStore("orders").openCursor().onsuccess = e => {
-                const c = e.target.result;
-                if (c) { 
-                    if(c.value.wholesaler) wholesalers.add(c.value.wholesaler); 
-                    c.continue(); 
-                } else {
-                    container.innerHTML = "";
-                    if (wholesalers.size > 0) {
-                        section.style.display = "block";
-                        Array.from(wholesalers).sort().forEach(w => {
-                            container.innerHTML += `<div class="wholesaler-actions"><p class="wholesaler-title">◆ ${w}</p><button class="btn-print" onclick="printOrder('${w}')">印刷する</button></div>`;
-                        });
-                    } else { section.style.display = "none"; }
-                }
-            };
+            
+            orders.forEach(o => {
+                if (o.wholesaler) wholesalers.add(o.wholesaler);
+            });
+
+            container.innerHTML = "";
+            if (wholesalers.size > 0) {
+                section.style.display = "block";
+                Array.from(wholesalers).sort().forEach(w => {
+                    container.innerHTML += `<div class="wholesaler-actions"><p class="wholesaler-title">◆ ${w}</p><button class="btn-print" onclick="printOrder('${w}')">印刷する</button></div>`;
+                });
+            } else {
+                section.style.display = "none";
+            }
         }
 
         function saveData(event) {
@@ -193,74 +228,59 @@
             
             if (!name || !wholesaler) return;
 
-            const t = db.transaction("orders", "readwrite");
-            const store = t.objectStore("orders");
-            
-            store.add({
-                itemName: name, 
-                wholesaler: wholesaler, 
-                quantity: qty, 
+            let orders = getOrders();
+            const newOrder = {
+                id: Date.now() + Math.random(),
+                itemName: name,
+                wholesaler: wholesaler,
+                quantity: qty,
                 date: new Date().toLocaleDateString()
-            });
+            };
 
-            t.oncomplete = () => { 
-                document.getElementById("itemName").value = ""; 
-                document.getElementById("itemQty").value = "1";
-                displayData(); 
-            };
-            
-            t.onerror = (e) => {
-                console.error("保存失敗:", e);
-                alert("データの追加に失敗しました。");
-            };
+            orders.push(newOrder);
+            saveOrders(orders);
+
+            document.getElementById("itemName").value = "";
+            document.getElementById("itemQty").value = "1";
+            document.getElementById("itemWholesaler").value = "";
+            displayData();
         }
 
         function displayData() {
-            const orderList = document.getElementById("orderList"); orderList.innerHTML = "";
-            db.transaction("orders", "readonly").objectStore("orders").openCursor().onsuccess = e => {
-                const c = e.target.result;
-                if (c) {
-                    orderList.innerHTML += `<li><div class="item-info"><span>【${c.value.wholesaler}】 <strong>${c.value.itemName}</strong> × ${c.value.quantity}個</span></div><button class="btn-delete" onclick="deleteData(${c.value.id})">削除</button></li>`;
-                    c.continue();
-                } else { updatePrintButtons(); }
-            };
+            const orderList = document.getElementById("orderList");
+            orderList.innerHTML = "";
+            let orders = getOrders();
+
+            if (orders.length === 0) {
+                orderList.innerHTML = "<li style='justify-content: center; color: #666;'>発注待ちの商品はありません</li>";
+            } else {
+                orders.forEach(c => {
+                    orderList.innerHTML += `<li><div class="item-info"><span>【${c.wholesaler}】 <strong>${c.itemName}</strong> × ${c.quantity}個</span></div><button class="btn-delete" onclick="deleteData(${c.id})">削除</button></li>`;
+                });
+            }
+            updatePrintButtons();
         }
 
         function deleteData(id) {
-            const t = db.transaction("orders", "readwrite");
-            t.objectStore("orders").delete(id);
-            t.oncomplete = displayData;
+            let orders = getOrders();
+            orders = orders.filter(o => o.id !== id);
+            saveOrders(orders);
+            displayData();
         }
 
-        async function printOrder(w) {
+        function printOrder(w) {
             currentPrintingWholesaler = w;
             const printArea = document.getElementById("printArea");
-            
-            const allOrders = await new Promise(resolve => {
-                let list = [];
-                db.transaction("orders", "readonly").objectStore("orders").openCursor().onsuccess = e => {
-                    let c = e.target.result;
-                    if(c) {
-                        if(c.value.wholesaler === w) list.push(c.value);
-                        c.continue();
-                    } else resolve(list);
-                };
-            });
+            let orders = getOrders();
+            let products = getProducts();
 
+            let targetOrders = orders.filter(o => o.wholesaler === w);
             let total = 0;
             let orderRows = "";
-            
-            for (let item of allOrders) {
-                let cost = await new Promise(resolve => {
-                    db.transaction("products", "readonly").objectStore("products").openCursor().onsuccess = e => {
-                        let c = e.target.result;
-                        if(c) {
-                            if(c.value.itemName === item.itemName) resolve(c.value.costPrice || 0);
-                            else c.continue();
-                        } else resolve(0);
-                    };
-                });
-                
+
+            targetOrders.forEach(item => {
+                let prod = products.find(p => p.itemName === item.itemName);
+                let cost = prod && prod.costPrice ? prod.costPrice : 0;
                 let subtotal = cost * item.quantity;
                 total += subtotal;
 
@@ -269,7 +289,7 @@
                 } else {
                     orderRows += `<tr><td>${item.itemName}</td><td>${item.quantity}</td></tr>`;
                 }
-            }
+            });
 
             if (w === '信公' && total < 20000) {
                 alert("警告：信公への発注合計金額が20,000円に達していません！（現在: " + total.toLocaleString() + "円）");
@@ -286,38 +306,48 @@
         window.onafterprint = () => {
             if (!currentPrintingWholesaler) return;
             if (confirm(currentPrintingWholesaler + " への発注を完了しましたか？")) {
-                const t = db.transaction(["orders", "logs"], "readwrite");
-                t.objectStore("orders").openCursor().onsuccess = e => {
-                    const c = e.target.result;
-                    if (c) {
-                        if (c.value.wholesaler === currentPrintingWholesaler) {
-                            t.objectStore("logs").add({...c.value, timestamp: new Date().toLocaleString()});
-                            c.delete();
-                        }
-                        c.continue();
+                let orders = getOrders();
+                let logs = getLogs();
+                let timestamp = new Date().toLocaleString();
+
+                let remainingOrders = [];
+                orders.forEach(o => {
+                    if (o.wholesaler === currentPrintingWholesaler) {
+                        logs.unshift({...o, timestamp: timestamp});
+                    } else {
+                        remainingOrders.push(o);
                     }
-                };
-                t.oncomplete = () => { 
-                    currentPrintingWholesaler = null;
-                    displayData(); 
-                    displayLogs(); 
-                };
+                });
+
+                saveOrders(remainingOrders);
+                saveLogs(logs);
+
+                currentPrintingWholesaler = null;
+                displayData();
+                displayLogs();
             } else {
                 currentPrintingWholesaler = null;
             }
         };
 
         function displayLogs() {
-            const list = document.getElementById("logItemsList"); list.innerHTML = "";
-            db.transaction("logs", "readonly").objectStore("logs").openCursor().onsuccess = e => {
-                const c = e.target.result;
-                if (c) {
-                    list.innerHTML = `<div class="log-item"><span class="log-date">[${c.value.timestamp}]</span><br>【${c.value.wholesaler}】 <strong>${c.value.itemName}</strong> × ${c.value.quantity}個</div>` + list.innerHTML;
-                    c.continue();
-                }
-            };
+            const list = document.getElementById("logItemsList");
+            list.innerHTML = "";
+            let logs = getLogs();
+
+            if (logs.length === 0) {
+                list.innerHTML = "<div class='log-item' style='text-align:center; color:#666;'>履歴はありません</div>";
+                return;
+            }
+
+            logs.forEach(c => {
+                list.innerHTML += `<div class="log-item"><span class="log-date">[${c.timestamp}]</span><br>【${c.wholesaler}】 <strong>${c.itemName}</strong> × ${c.quantity}個</div>`;
+            });
         }
-        function filterMasterList() { updateMasterSuggestList(); }
+
+        function filterMasterList() {
+            updateMasterSuggestList();
+        }
     </script>
 </body>
 </html>
