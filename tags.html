@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>値札作成システム</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background: #f0f0f0; }
+        .no-print { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        
+        /* 印刷時に右端が切れないよう、幅と隙間をわずかに縮小調整 */
+        .tag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 204mm; max-width: 100%; box-sizing: border-box; }
+        
+        /* 値札カード全体 */
+        .tag { border: 1px solid #000; background: white; padding: 0; height: 160px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; overflow: hidden; position: relative; width: 100%; }
+        
+        /* 上部エリア：通常は緑色、バッジがある場合はJavaScriptで青（#31869B）に変更 */
+        .upper-section { background-color: #28a745; padding: 10px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; flex-grow: 1; width: 100%; box-sizing: border-box; position: relative; }
+        
+        /* 商品区分バッジ（左上配置・赤背景・可変幅） */
+        .category-badge {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            background-color: #dc3545;
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 3px;
+            line-height: 1;
+            z-index: 10;
+            box-sizing: border-box;
+        }
+
+        /* 商品名：フォントサイズを大きめに調整（15px） */
+        .name { 
+            font-weight: bold; 
+            font-size: 15px; 
+            line-height: 1.25;
+            color: #fff;
+            width: 100%; 
+            padding: 0 10px;
+            max-height: 38px; 
+            overflow: hidden; 
+            display: -webkit-box; 
+            -webkit-line-clamp: 2; 
+            -webkit-box-orient: vertical; 
+            box-sizing: border-box;
+        }
+        
+        /* 用途（説明）：文章がある場合のみ表示、上部に白い線を配置 */
+        .desc-container {
+            width: 100%;
+            margin-top: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 両端にスペースをあけた白線（幅90%で中央寄せ） */
+        .desc-divider {
+            width: 90%;
+            height: 1px;
+            background-color: #ffffff;
+            margin: 0 auto 5px auto;
+        }
+
+        .desc { 
+            font-size: 11px; 
+            color: #f0f0f0; 
+            padding: 0 10px;
+            max-height: 28px; 
+            overflow: hidden; 
+            display: -webkit-box; 
+            -webkit-line-clamp: 2; 
+            -webkit-box-orient: vertical; 
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* 下部エリア（白背景：バーコード左、価格右） */
+        .lower-section { background: white; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; height: 55px; border-top: 1px solid #000; box-sizing: border-box; }
+        
+        .barcode-area { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 55%; }
+        .barcode { width: 100%; height: 24px; }
+        
+        .price-box { color: red; font-weight: bold; font-size: 24px; line-height: 1; text-align: right; }
+        
+        /* 最下部のカラーバー：発注先別カラー */
+        .color-bar { width: 100%; height: 6px; }
+        
+        .tag.wholesaler-daiko .color-bar { background-color: #ff69b4; } /* ピンク */
+        .tag.wholesaler-toho .color-bar { background-color: #ffa500; } /* オレンジ */
+        .tag.wholesaler-shinko .color-bar { background-color: #28a745; } /* 緑 */
+        .tag.wholesaler-other .color-bar { background-color: #6c757d; } /* グレー */
+        
+        /* 個別削除ボタン（カードの右上） */
+        .delete-btn { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 15; }
+        .delete-btn:hover { background: rgba(0,0,0,0.8); }
+
+        @media print {
+            .no-print { display: none; }
+            body { background: white; margin: 0; }
+            .tag { border: 1px solid #000; }
+            .upper-section, .desc-divider, .color-bar, .category-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .delete-btn { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <input type="text" id="nameSearch" placeholder="商品名で検索" list="masterList" style="width: 250px; padding: 5px;">
+        <datalist id="masterList"></datalist>
+        
+        <label>数量: <input type="number" id="qtyInput" value="1" min="1" max="99" style="width: 50px; padding: 5px;"></label>
+        
+        <button onclick="addTags()" style="padding: 6px 12px; cursor: pointer;">値札追加</button>
+        <button onclick="window.print()" style="padding: 6px 12px; cursor: pointer;">印刷する</button>
+        <button onclick="document.getElementById('tagContainer').innerHTML=''" style="padding: 6px 12px; cursor: pointer; background: #ffcccc;">全削除</button>
+    </div>
+    
+    <div class="tag-grid" id="tagContainer"></div>
+
+    <script>
+        let db;
+        const request = indexedDB.open("HatchuDB", 26);
+        
+        request.onsuccess = e => {
+            db = e.target.result;
+            const datalist = document.getElementById("masterList");
+            const tx = db.transaction("products", "readonly");
+            tx.objectStore("products").openCursor().onsuccess = ev => {
+                const c = ev.target.result;
+                if(c) {
+                    const itemName = c.value.itemName || "";
+                    if(itemName) {
+                        datalist.innerHTML += `<option value="${itemName}">`;
+                    }
+                    c.continue();
+                }
+            };
+        };
+
+        function addTags() {
+            const nameInput = document.getElementById('nameSearch');
+            const qtyInput = document.getElementById('qtyInput');
+            const targetName = nameInput.value.trim();
+            const qty = parseInt(qtyInput.value) || 1;
+
+            if (!targetName) {
+                alert("商品名を選択・入力してください。");
+                return;
+            }
+
+            if (!db) {
+                alert("データベースに接続されていません。");
+                return;
+            }
+
+            const tx = db.transaction("products", "readonly");
+            const store = tx.objectStore("products");
+            let found = false;
+
+            store.openCursor().onsuccess = e => {
+                const cursor = e.target.result;
+                if(cursor) {
+                    const item = cursor.value;
+                    const itemName = (item.itemName || "").trim();
+
+                    if(itemName === targetName || itemName.includes(targetName)) {
+                        found = true;
+                        const container = document.getElementById('tagContainer');
+                        
+                        for (let i = 0; i < qty; i++) {
+                            const div = document.createElement('div');
+                            div.className = 'tag';
+                            
+                            // 発注先別のカラークラスを付与
+                            const w = (item.wholesaler || "").trim();
+                            if (w.includes("ダイコー")) {
+                                div.classList.add('wholesaler-daiko');
+                            } else if (w.includes("e健康ショップ") || w.includes("東邦")) {
+                                div.classList.add('wholesaler-toho');
+                            } else if (w.includes("信公")) {
+                                div.classList.add('wholesaler-shinko');
+                            } else {
+                                div.classList.add('wholesaler-other');
+                            }
+                            
+                            const displayName = (item.priceTagItemName && item.priceTagItemName.trim() !== "") 
+                                ? item.priceTagItemName 
+                                : item.itemName;
+
+                            const rawNote = (item.note || "").trim();
+                            const displayNote = (rawNote && rawNote !== "---") ? rawNote : "";
+
+                            // 商品区分（category）がある場合のみバッジHTMLを生成し、上部エリアの背景色を青(#31869B)にする
+                            const cleanCat = (item.category || "").trim();
+                            let categoryHtml = "";
+                            let upperStyle = "";
+                            if (cleanCat !== "") {
+                                categoryHtml = `<div class="category-badge">${cleanCat}</div>`;
+                                upperStyle = `style="background-color: #31869B;"`;
+                            }
+
+                            // 用途がある場合のみ、中央に配置された短い白い線と用途文を挿入
+                            let descHtml = "";
+                            if (displayNote !== "") {
+                                descHtml = `
+                                    <div class="desc-container">
+                                        <div class="desc-divider"></div>
+                                        <div class="desc">${displayNote}</div>
+                                    </div>
+                                `;
+                            }
+
+                            div.innerHTML = `
+                                <button class="delete-btn" onclick="this.parentElement.remove()" title="この値札を削除">×</button>
+                                <div class="upper-section" ${upperStyle}>
+                                    ${categoryHtml}
+                                    <div class="name">${displayName}</div>
+                                    ${descHtml}
+                                </div>
+                                <div class="lower-section">
+                                    <div class="barcode-area">
+                                        <svg class="barcode"></svg>
+                                    </div>
+                                    <div class="price-box">¥${parseInt(item.sellingPrice || 0).toLocaleString()}</div>
+                                </div>
+                                <div class="color-bar"></div>
+                            `;
+                            container.appendChild(div);
+                            
+                            const svg = div.querySelector('.barcode');
+                            svg.setAttribute("preserveAspectRatio", "none");
+                            
+                            const codeStr = String(item.jan || "").trim();
+                            
+                            try {
+                                JsBarcode(svg, codeStr || "000000", { 
+                                    format: "code128", 
+                                    displayValue: false, 
+                                    width: 2.0, 
+                                    height: 24,
+                                    margin: 0
+                                });
+                            } catch(err) {
+                                console.error("バーコード生成エラー:", err);
+                            }
+                        }
+                        
+                        nameInput.value = "";
+                        qtyInput.value = "1";
+                        nameInput.focus();
+                        return;
+                    }
+                    cursor.continue();
+                } else {
+                    if(!found) {
+                        alert("指定された商品が見つかりませんでした: " + targetName);
+                    }
+                }
+            };
+        }
+    </script>
+</body>
+</html>
