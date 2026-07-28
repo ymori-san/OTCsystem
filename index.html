@@ -159,6 +159,9 @@
     <script>
         let currentPrintingWholesaler = null;
         
+        // ⚠️ 設定：ご自身のGASのウェブアプリURLをここに貼り付けてください（master.htmlと同じもの）
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxavToYkOGbRJE25AGUMHLoQKx5XHfowr-oTxXC9eN-P6dNQdD4xabTi510HUshWMmjZA/exec"; 
+
         // 値札作成システム側とキー名を統一
         const STORAGE_KEY_PRODUCTS = "hatchu_products";
         const STORAGE_KEY_ORDERS = "Hatchu_Orders";
@@ -167,7 +170,6 @@
 
         // ページ読み込み時の処理
         window.addEventListener("DOMContentLoaded", () => {
-            // すでに一度ログイン成功しているかチェック
             if (sessionStorage.getItem(STORAGE_KEY_AUTH) === "true") {
                 unlockSystem();
             }
@@ -180,20 +182,46 @@
             const errorMsg = document.getElementById("authError");
 
             if (inputVal === "Okenko.otc") {
-                // 認証成功：ブラウザを閉じたりタブを閉じるまでの間、状態を保持
                 sessionStorage.setItem(STORAGE_KEY_AUTH, "true");
                 unlockSystem();
             } else {
-                // 認証失敗：エラーメッセージを表示
                 errorMsg.style.display = "block";
                 document.getElementById("passwordInput").value = "";
             }
         }
 
-        // システムのロックを解除してデータを初期化・表示する関数
+        // システムのロックを解除してデータを初期化・クラウド同期する関数
         function unlockSystem() {
             document.getElementById("authOverlay").style.display = "none";
             initStorageData();
+            
+            // 🔄 起動時にGASから最新マスタデータを取得してローカルストレージを更新
+            fetchMasterFromCloud();
+        }
+
+        function fetchMasterFromCloud() {
+            // URLが設定されていない場合の対策（初期設定忘れ防止）
+            if (!GAS_API_URL || GAS_API_URL.includes("ここにGASのウェブアプリURL")) {
+                console.warn("GAS_API_URLが設定されていません。ローカルストレージのデータで起動します。");
+                renderSystem();
+                return;
+            }
+
+            fetch(GAS_API_URL)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "success" && data.items && data.items.length > 0) {
+                        localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(data.items));
+                    }
+                    renderSystem();
+                })
+                .catch(err => {
+                    console.error("クラウドからのデータ取得に失敗しました（オフライン起動）", err);
+                    renderSystem(); // ネット未接続時は既存のローカルストレージデータで動かす
+                });
+        }
+
+        function renderSystem() {
             displayData();
             updateMasterSuggestList();
             displayLogs();
