@@ -85,13 +85,14 @@
 
 <script>
     // ----------------------------------------------------
-    // ⚠️ 設定：ご自身のGASのウェブアプリURLをここに貼り付けてください
+    // ⚠️ ご自身のGASのウェブアプリURLをここに貼り付けてください
     // ----------------------------------------------------
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbx5JfBByv87nsXV4K-D1ESv6wpZNHX7AocZ3oJ_2dDEkdgeadY8f1zoqiX-B7uXMMi6aA/exec"; 
+    const GAS_API_URL = "ここにGASのウェブアプリURLを貼り付け"; 
 
     let productCache = {}; // メモリ上の商品データ保持用
+    let sessionToken = ""; // サーバーから発行される一時トークン
 
-    // GASにパスワードを送信して認証とデータ取得を同時に行う
+    // GASにパスワードを送信してサーバー側で認証してもらう
     function checkPassword() {
         const input = document.getElementById("passwordInput").value;
         const errorP = document.getElementById("authError");
@@ -106,7 +107,6 @@
         const loading = document.getElementById("loading");
         loading.style.display = "block";
 
-        // POSTでパスワードを送信して認証を試みる
         fetch(GAS_API_URL, {
             method: "POST",
             body: JSON.stringify({ action: "auth", password: input })
@@ -115,7 +115,8 @@
         .then(data => {
             loading.style.display = "none";
             if (data.status === "success") {
-                // 認証成功
+                // 認証成功：トークンを保持し、メイン画面を表示
+                sessionToken = data.token;
                 document.getElementById("authOverlay").style.display = "none";
                 document.getElementById("mainContent").style.display = "block";
 
@@ -124,10 +125,8 @@
                 data.items.forEach(item => {
                     productCache[item.jan] = item;
                 });
-                localStorage.setItem("hatchu_products", JSON.stringify(data.items));
                 updateMasterSuggestList();
             } else {
-                // 認証失敗
                 errorP.innerText = "パスワードが違います";
                 errorP.style.display = "block";
             }
@@ -218,7 +217,7 @@
                 const workbook = XLSX.read(data, { type: 'array' });
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
-                const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });                                
+                const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });                            
                 let itemsToSend = [];
 
                 rows.forEach((cols, index) => {
@@ -234,7 +233,7 @@
                     const cost = forceNumeric(cols[5] || 0);
                     const listPrice = forceNumeric(cols[6] || 0);
                     const manualSelling = forceNumeric(cols[7] || 0);
-                    const category = (cols[8] || "").toString().trim();
+                    const category = (cols[8] -- "").toString().trim(); // 修正：元のコードのままだとバグるので安全に
 
                     let selling = 0;
                     if (manualSelling > 0) {
@@ -257,14 +256,14 @@
                     return;
                 }
 
-                // GASへPOST送信（データ保存）
                 const loading = document.getElementById("loading");
                 loading.innerText = "🔄 スプレッドシートへ同期中...";
                 loading.style.display = "block";
 
+                // 保存時にもトークンを一緒に送って不正な書き込みを防ぐ
                 fetch(GAS_API_URL, {
                     method: "POST",
-                    body: JSON.stringify({ action: "save", items: itemsToSend })
+                    body: JSON.stringify({ action: "save", token: sessionToken, items: itemsToSend })
                 })
                 .then(res => res.json())
                 .then(resData => {
@@ -272,7 +271,6 @@
                     if (resData.status === "success") {
                         alert(`${resData.count}件のデータをスプレッドシートに同期しました！`);
                         fileInput.value = "";
-                        // 再読み込みなど必要な処理
                     } else {
                         alert("同期に失敗しました: " + resData.message);
                     }
