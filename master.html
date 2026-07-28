@@ -267,7 +267,9 @@
                     loading.style.display = "none";
                     if (resData.status === "success") {
                         alert(`${resData.count}件のデータをスプレッドシートに同期しました！`);
-                        fileInput.value = "";
+                        // 発注管理システム側でも即座に読めるようにローカルストレージを更新
+                            localStorage.setItem("hatchu_products", JSON.stringify(itemsToSend));
+                            fileInput.value = "";
                         loadMasterData(); // 最新データを再読み込み
                     } else {
                         alert("同期に失敗しました: " + resData.message);
