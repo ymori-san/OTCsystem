@@ -36,7 +36,7 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        .drop-zone.dragover { background-color: #ffec99; border-color: #d9480f; }
+        .drop-zone.dragover { background-color: #ffec99; border-color: d9480f; }
         .drop-zone p { margin: 0; font-weight: bold; color: #666; }
         .drop-zone span { font-size: 13px; color: #888; }
         
@@ -87,7 +87,7 @@
     // ----------------------------------------------------
     // ⚠️ 設定：ご自身のGASのウェブアプリURLをここに貼り付けてください
     // ----------------------------------------------------
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzIfiUFfCYIIXno-ljlLD7G1jcdv9dlUXuXu2XJJY0_HlMKNtJd8V1xpUI6uu5CynsgvA/exec"; 
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxSCXz4GzQPmQzl1XyghmCj5WJdqpeZuCm6p75DxwRUuz7QL41-6y_n7Aa7VfjtpQbc2g/exec"; 
 
     // 🔐 設定：社内用の合言葉（パスワード）を設定してください
     const ACCESS_PASSWORD = "Okenko.otc"; 
@@ -124,10 +124,6 @@
                     data.items.forEach(item => {
                         productCache[item.jan] = item;
                     });
-                    
-                    // ⭐️ ここで値札作成ツールと共有するために localStorage にデータを保存する
-                    localStorage.setItem("hatchu_products", JSON.stringify(data.items));
-
                     updateMasterSuggestList();
                 } else {
                     alert("データの取得に失敗しました: " + data.message);
@@ -272,7 +268,7 @@
                     if (resData.status === "success") {
                         alert(`${resData.count}件のデータをスプレッドシートに同期しました！`);
                         fileInput.value = "";
-                        loadMasterData(); // 最新データを再読み込み（ここでlocalStorageも自動更新されます）
+                        loadMasterData(); // 最新データを再読み込み
                     } else {
                         alert("同期に失敗しました: " + resData.message);
                     }
