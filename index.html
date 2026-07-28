@@ -48,12 +48,14 @@
         .auth-box h2 { border-bottom: none; margin-top: 0; color: #333; }
         .auth-box input { width: 100%; padding: 10px; margin: 15px 0; box-sizing: border-box; font-size: 16px; }
 
+        /* 💻 画面幅が広い時の左右レイアウト処理 */
         @media screen and (min-width: 1024px) {
             .main-container { max-width: 1250px; flex-direction: row; gap: 25px; }
             .left-side { flex: 1.3; position: sticky; top: 20px; }
             .right-side { flex: 0.7; }
             .master-list-container { max-height: 400px; }
         }
+
         #printArea { display: none; }
         @media print {
             body { background: white; color: black; margin: 0; padding: 0; }
