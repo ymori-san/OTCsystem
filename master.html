@@ -53,7 +53,7 @@
         <p style="font-size: 13px; color: #666;">パスワードを入力してください</p>
         <input type="password" id="passwordInput" placeholder="パスワード">
         <button onclick="checkPassword()">ログイン</button>
-        <p id="authError" style="color: red; font-size: 12px; margin-top: 10px; display: none;">パスワードが違います</p>
+        <p id="authError" style="color: red; font-size: 12px; margin-top: 10px; display: none;"></p>
     </div>
 </div>
 
@@ -87,58 +87,62 @@
     // ----------------------------------------------------
     // ⚠️ 設定：ご自身のGASのウェブアプリURLをここに貼り付けてください
     // ----------------------------------------------------
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzIfiUFfCYIIXno-ljlLD7G1jcdv9dlUXuXu2XJJY0_HlMKNtJd8V1xpUI6uu5CynsgvA/exec"; 
-
-    // 🔐 設定：社内用の合言葉（パスワード）を設定してください
-    const ACCESS_PASSWORD = "Okenko.otc"; 
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbx5JfBByv87nsXV4K-D1ESv6wpZNHX7AocZ3oJ_2dDEkdgeadY8f1zoqiX-B7uXMMi6aA/exec"; 
 
     let productCache = {}; // メモリ上の商品データ保持用
 
+    // GASにパスワードを送信して認証とデータ取得を同時に行う
     function checkPassword() {
         const input = document.getElementById("passwordInput").value;
-        if (input === ACCESS_PASSWORD) {
-            document.getElementById("authOverlay").style.display = "none";
-            document.getElementById("mainContent").style.display = "block";
-            loadMasterData(); // データ読み込み開始
-        } else {
-            document.getElementById("authError").style.display = "block";
+        const errorP = document.getElementById("authError");
+        errorP.style.display = "none";
+
+        if (!input) {
+            errorP.innerText = "パスワードを入力してください";
+            errorP.style.display = "block";
+            return;
         }
+
+        const loading = document.getElementById("loading");
+        loading.style.display = "block";
+
+        // POSTでパスワードを送信して認証を試みる
+        fetch(GAS_API_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "auth", password: input })
+        })
+        .then(res => res.json())
+        .then(data => {
+            loading.style.display = "none";
+            if (data.status === "success") {
+                // 認証成功
+                document.getElementById("authOverlay").style.display = "none";
+                document.getElementById("mainContent").style.display = "block";
+
+                // 取得したデータを反映
+                productCache = {};
+                data.items.forEach(item => {
+                    productCache[item.jan] = item;
+                });
+                localStorage.setItem("hatchu_products", JSON.stringify(data.items));
+                updateMasterSuggestList();
+            } else {
+                // 認証失敗
+                errorP.innerText = "パスワードが違います";
+                errorP.style.display = "block";
+            }
+        })
+        .catch(err => {
+            loading.style.display = "none";
+            console.error(err);
+            alert("サーバーとの通信に失敗しました。");
+        });
     }
 
     // Enterキーでもログインできるようにする
     document.getElementById("passwordInput").addEventListener("keypress", (e) => {
         if (e.key === "Enter") checkPassword();
     });
-
-    // スプレッドシートから全データを取得
-    function loadMasterData() {
-        const loading = document.getElementById("loading");
-        loading.style.display = "block";
-
-        fetch(GAS_API_URL)
-            .then(res => res.json())
-            .then(data => {
-                loading.style.display = "none";
-                if (data.status === "success") {
-                    productCache = {};
-                    data.items.forEach(item => {
-                        productCache[item.jan] = item;
-                    });
-                    
-                    // ⭐️ ここで値札作成ツールと共有するために localStorage にデータを保存する
-                    localStorage.setItem("hatchu_products", JSON.stringify(data.items));
-
-                    updateMasterSuggestList();
-                } else {
-                    alert("データの取得に失敗しました: " + data.message);
-                }
-            })
-            .catch(err => {
-                loading.style.display = "none";
-                console.error(err);
-                alert("サーバーとの通信に失敗しました。URLやネットワークを確認してください。");
-            });
-    }
 
     // カメラ読み取り
     const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
@@ -156,8 +160,7 @@
     function updateMasterSuggestList() {
         const list = document.getElementById("masterItemsList");
         const countDiv = document.getElementById("masterCount");
-        list.innerHTML = "";
-        
+        list.innerHTML = "";                
         const keys = Object.keys(productCache);
         keys.forEach(jan => {
             const item = productCache[jan];
@@ -215,8 +218,7 @@
                 const workbook = XLSX.read(data, { type: 'array' });
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
-                const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                
+                const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });                                
                 let itemsToSend = [];
 
                 rows.forEach((cols, index) => {
@@ -226,11 +228,9 @@
                     const jan = cols[0].toString().trim();
                     const itemName = (cols[1] || "").toString().trim();
                     const priceTagItemName = (cols[2] || "").toString().trim() || itemName;
-                    const wholesaler = (cols[3] || "").toString().trim();
-                    
+                    const wholesaler = (cols[3] || "").toString().trim();                                        
                     const taxRaw = (cols[4] || "").toString();
-                    const taxRate = taxRaw.includes("8") ? 8 : 10;
-                    
+                    const taxRate = taxRaw.includes("8") ? 8 : 10;                                        
                     const cost = forceNumeric(cols[5] || 0);
                     const listPrice = forceNumeric(cols[6] || 0);
                     const manualSelling = forceNumeric(cols[7] || 0);
@@ -257,7 +257,7 @@
                     return;
                 }
 
-                // GASへPOST送信
+                // GASへPOST送信（データ保存）
                 const loading = document.getElementById("loading");
                 loading.innerText = "🔄 スプレッドシートへ同期中...";
                 loading.style.display = "block";
@@ -272,7 +272,7 @@
                     if (resData.status === "success") {
                         alert(`${resData.count}件のデータをスプレッドシートに同期しました！`);
                         fileInput.value = "";
-                        loadMasterData(); // 最新データを再読み込み（ここでlocalStorageも自動更新されます）
+                        // 再読み込みなど必要な処理
                     } else {
                         alert("同期に失敗しました: " + resData.message);
                     }
