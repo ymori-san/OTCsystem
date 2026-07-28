@@ -125,9 +125,38 @@
     <script>
         let productsCache = [];
 
-        // ページ読み込み時に localStorage からデータを取得して datalist を構築
+        // ⚠️ 設定：発注管理システム側と同じGASのウェブアプリURLをここに貼り付けてください
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxavToYkOGbRJE25AGUMHLoQKx5XHfowr-oTxXC9eN-P6dNQdD4xabTi510HUshWMmjZA/exec"; 
+        const STORAGE_KEY_PRODUCTS = "hatchu_products"; // 他のシステムとキーを統一
+
+        // ページ読み込み時にクラウドから最新マスタを取得、失敗時はローカルストレージを使用
         window.addEventListener('DOMContentLoaded', () => {
-            const savedData = localStorage.getItem("hatchu_products");
+            fetchMasterFromCloud();
+        });
+
+        function fetchMasterFromCloud() {
+            if (!GAS_API_URL || GAS_API_URL.includes("ここにGASのウェブアプリURL")) {
+                console.warn("GAS_API_URLが設定されていません。ローカルストレージのデータで起動します。");
+                loadFromLocalStorage();
+                return;
+            }
+
+            fetch(GAS_API_URL)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "success" && data.items && data.items.length > 0) {
+                        localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(data.items));
+                    }
+                    loadFromLocalStorage();
+                })
+                .catch(err => {
+                    console.error("クラウドからのデータ取得に失敗しました（オフライン起動）", err);
+                    loadFromLocalStorage(); // ネット未接続時は既存のローカルストレージデータで動かす
+                });
+        }
+
+        function loadFromLocalStorage() {
+            const savedData = localStorage.getItem(STORAGE_KEY_PRODUCTS);
             if (savedData) {
                 try {
                     productsCache = JSON.parse(savedData);
@@ -144,9 +173,9 @@
                     console.error("localStorageのパースエラー:", e);
                 }
             } else {
-                console.warn("localStorageに商品データが見つかりません。master.html側でデータを保存してください。");
+                console.warn("localStorageに商品データが見つかりません。");
             }
-        });
+        }
 
         function addTags() {
             const nameInput = document.getElementById('nameSearch');
@@ -160,7 +189,7 @@
             }
 
             if (productsCache.length === 0) {
-                alert("商品データが読み込まれていません。master.html側からデータを同期・保存し直してください。");
+                alert("商品データが読み込まれていません。ネットワーク接続やURLを確認してください。");
                 return;
             }
 
