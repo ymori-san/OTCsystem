@@ -21,9 +21,8 @@
         /* 上部エリア：デフォルトは緑色 */
         .upper-section { background-color: #28a745; padding: 10px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; flex-grow: 1; width: 100%; box-sizing: border-box; position: relative; }
         
-        /* 税率10または区分バッジがある場合の青色背景 */
-        .upper-section.tax-blue,
-        .upper-section.category-blue { background-color: #31869B; }
+        /* 税率10の場合の青色背景 */
+        .upper-section.tax-blue { background-color: #007bff; }
         
         /* 商品区分バッジ（左上配置・赤背景・可変幅） */
         .category-badge {
@@ -111,7 +110,7 @@
             .no-print { display: none; }
             body { background: white; margin: 0; }
             .tag { border: 1px solid #000; }
-            .upper-section, .upper-section.tax-blue, .upper-section.category-blue, .desc-divider, .color-bar, .category-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .upper-section, .upper-section.tax-blue, .desc-divider, .color-bar, .category-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .delete-btn { display: none !important; }
         }
     </style>
@@ -128,7 +127,7 @@
         <button onclick="document.getElementById('tagContainer').innerHTML=''" style="padding: 6px 12px; cursor: pointer; background: #ffcccc;">全削除</button>
         
         <!-- データベース反映中メッセージ -->
-        <span id="loadingMsg">🔄データベース反映中...</span>
+        <span id="loadingMsg">データベース反映中...</span>
     </div>
     
     <div class="tag-grid" id="tagContainer"></div>
@@ -188,7 +187,6 @@
                 console.warn("localStorageに商品データが見つかりません。");
             }
 
-            // 読み込み完了後にメッセージを非表示にする
             const loadingMsg = document.getElementById("loadingMsg");
             if (loadingMsg) loadingMsg.style.display = "none";
         }
@@ -245,10 +243,10 @@
                     const rawNote = (item.note || "").trim();
                     const displayNote = (rawNote && rawNote !== "---") ? rawNote : "";
 
-                    // 商品区分（cleanCategory / category）がある場合のみ赤色バッジHTMLを生成
+                    // 商品区分（category）が空欄でも「その他」でもない場合のみバッジを生成
                     const cleanCat = (item.category || "").trim();
                     let categoryHtml = "";
-                    if (cleanCat !== "") {
+                    if (cleanCat !== "" && cleanCat !== "その他") {
                         categoryHtml = `<div class="category-badge">${cleanCat}</div>`;
                     }
 
