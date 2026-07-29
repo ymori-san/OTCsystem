@@ -146,7 +146,7 @@
     function searchAndShow(jan) {
         const cleanJan = jan.trim();
         const item = productCache[cleanJan];
-        alert(item ? `発見: ${item.itemName} (売価: ¥${Number(item.sellingPrice).toLocaleString()})` : "未登録商品です");
+        alert(item ? `発見: ${item.itemName} (売価: ¥${Number(item.sellingPrice).toLocaleString()} / 職員価格: ¥${Number(item.staffPrice || 0).toLocaleString()})` : "未登録商品です");
     }
 
     function updateMasterSuggestList() {
@@ -157,13 +157,13 @@
         const keys = Object.keys(productCache);
         keys.forEach(jan => {
             const item = productCache[jan];
-            list.innerHTML += `<div class="master-item"><span>${item.itemName} (${jan})</span><span>¥${Number(item.sellingPrice).toLocaleString()}</span></div>`;
+            list.innerHTML += `<div class="master-item"><span>${item.itemName} (${jan})</span><span>売価: ¥${Number(item.sellingPrice).toLocaleString()} / 職員: ¥${Number(item.staffPrice || 0).toLocaleString()}</span></div>`;
         });
         countDiv.innerText = `登録件数：${keys.length} 件`;
     }
 
     function downloadCSV() {
-        let csv = "JAN,商品名,値札用商品名,発注先,税率,納入価,小売希望価格,売価,商品区分,用途\n";
+        let csv = "JAN,商品名,値札用商品名,発注先,税率,納入価,小売希望価格,売価,商品区分,用途,職員価格\n";
         Object.values(productCache).forEach(item => {
             const cleanItemName = (item.itemName || "").replace(/[\r\n]+/g, ' ');
             const cleanPriceTagName = (item.priceTagItemName || item.itemName || "").replace(/[\r\n]+/g, ' ');
@@ -171,7 +171,7 @@
             const cleanCategory = (item.category || "").replace(/[\r\n]+/g, ' ');
             const cleanNote = (item.note || "").replace(/[\r\n]+/g, ' ');
 
-            csv += `${item.jan},${cleanItemName},${cleanPriceTagName},${cleanWholesaler},${item.taxRate},${item.costPrice},${item.listPrice || 0},${item.sellingPrice},${cleanCategory},${cleanNote}\n`;
+            csv += `${item.jan},${cleanItemName},${cleanPriceTagName},${cleanWholesaler},${item.taxRate},${item.costPrice},${item.listPrice || 0},${item.sellingPrice},${cleanCategory},${cleanNote},${item.staffPrice || 0}\n`;
         });
         const blob = new Blob(['\uFEFF' + csv], { type: "text/csv;charset=utf-8;" });
         const link = document.createElement("a");
@@ -231,7 +231,10 @@
                     const listPrice = forceNumeric(cols[6] || 0);
                     const manualSelling = forceNumeric(cols[7] || 0);
                     const category = (cols[8] || "").toString().trim();
+                    const note = (cols[9] || "").toString().trim();
+                    const manualStaffPrice = forceNumeric(cols[10] || 0); // 10列目を職員価格として取得
 
+                    // 通常売価の計算
                     let selling = 0;
                     if (manualSelling > 0) {
                         selling = manualSelling;
@@ -241,10 +244,19 @@
                         selling = (listBasedSelling > costBasedSelling) ? listBasedSelling : costBasedSelling;
                     }
 
+                    // 職員価格の計算 (仕入れ値 × 税率 × 1.15)
+                    let staff = 0;
+                    if (manualStaffPrice > 0) {
+                        staff = manualStaffPrice;
+                    } else {
+                        const taxMultiplier = (taxRate === 8) ? 1.08 : 1.1;
+                        staff = Math.round(cost * taxMultiplier * 1.15 / 10) * 10;
+                    }
+
                     itemsToSend.push({
                         jan, itemName, priceTagItemName, wholesaler, taxRate,
                         costPrice: cost, listPrice, sellingPrice: selling,
-                        category, note: (cols[9] || "").toString().trim()
+                        category, note, staffPrice: staff
                     });
                 });
 
@@ -268,8 +280,8 @@
                     if (resData.status === "success") {
                         alert(`${resData.count}件のデータをスプレッドシートに同期しました！`);
                         // 発注管理システム側でも即座に読めるようにローカルストレージを更新
-                            localStorage.setItem("hatchu_products", JSON.stringify(itemsToSend));
-                            fileInput.value = "";
+                        localStorage.setItem("hatchu_products", JSON.stringify(itemsToSend));
+                        fileInput.value = "";
                         loadMasterData(); // 最新データを再読み込み
                     } else {
                         alert("同期に失敗しました: " + resData.message);
