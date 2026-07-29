@@ -8,15 +8,22 @@
         body { font-family: sans-serif; margin: 20px; background: #f0f0f0; }
         .no-print { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         
+        /* データベース反映中メッセージのスタイル */
+        #loadingMsg { font-weight: bold; color: #007bff; font-size: 14px; animation: blink 1s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
         /* 印刷時に右端が切れないよう、幅と隙間をわずかに縮小調整 */
         .tag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 204mm; max-width: 100%; box-sizing: border-box; }
         
         /* 値札カード全体 */
         .tag { border: 1px solid #000; background: white; padding: 0; height: 160px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; overflow: hidden; position: relative; width: 100%; }
         
-        /* 上部エリア：デフォルトは緑色、税率10の場合は青色に変更 */
+        /* 上部エリア：デフォルトは緑色 */
         .upper-section { background-color: #28a745; padding: 10px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; flex-grow: 1; width: 100%; box-sizing: border-box; position: relative; }
-        .upper-section.tax-blue { background-color: #007bff; } /* 税率10用：青色 */
+        
+        /* 税率10または区分バッジがある場合の青色背景 */
+        .upper-section.tax-blue,
+        .upper-section.category-blue { background-color: #007bff; }
         
         /* 商品区分バッジ（左上配置・赤背景・可変幅） */
         .category-badge {
@@ -30,7 +37,7 @@
             padding: 2px 6px;
             border-radius: 3px;
             line-height: 1;
-            z-index: 5;
+            z-index: 10;
             box-sizing: border-box;
         }
 
@@ -97,14 +104,14 @@
         .tag.wholesaler-other .color-bar { background-color: #6c757d; } /* グレー */
         
         /* 個別削除ボタン（カードの右上） */
-        .delete-btn { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; }
+        .delete-btn { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 15; }
         .delete-btn:hover { background: rgba(0,0,0,0.8); }
 
         @media print {
             .no-print { display: none; }
             body { background: white; margin: 0; }
             .tag { border: 1px solid #000; }
-            .upper-section, .upper-section.tax-blue, .desc-divider, .color-bar, .category-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .upper-section, .upper-section.tax-blue, .upper-section.category-blue, .desc-divider, .color-bar, .category-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .delete-btn { display: none !important; }
         }
     </style>
@@ -119,29 +126,72 @@
         <button onclick="addTags()" style="padding: 6px 12px; cursor: pointer;">値札追加</button>
         <button onclick="window.print()" style="padding: 6px 12px; cursor: pointer;">印刷する</button>
         <button onclick="document.getElementById('tagContainer').innerHTML=''" style="padding: 6px 12px; cursor: pointer; background: #ffcccc;">全削除</button>
+        
+        <!-- データベース反映中メッセージ -->
+        <span id="loadingMsg">🔄データベース反映中...</span>
     </div>
     
     <div class="tag-grid" id="tagContainer"></div>
 
     <script>
-        let db;
-        const request = indexedDB.open("HatchuDB", 26);
-        
-        request.onsuccess = e => {
-            db = e.target.result;
-            const datalist = document.getElementById("masterList");
-            const tx = db.transaction("products", "readonly");
-            tx.objectStore("products").openCursor().onsuccess = ev => {
-                const c = ev.target.result;
-                if(c) {
-                    const itemName = c.value.itemName || "";
-                    if(itemName) {
-                        datalist.innerHTML += `<option value="${itemName}">`;
+        let productsCache = [];
+
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxavToYkOGbRJE25AGUMHLoQKx5XHfowr-oTxXC9eN-P6dNQdD4xabTi510HUshWMmjZA/exec"; 
+        const STORAGE_KEY_PRODUCTS = "hatchu_products";
+
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchMasterFromCloud();
+        });
+
+        function fetchMasterFromCloud() {
+            const loadingMsg = document.getElementById("loadingMsg");
+            if (loadingMsg) loadingMsg.style.display = "inline";
+
+            if (!GAS_API_URL || GAS_API_URL.includes("ここにGASのウェブアプリURL")) {
+                console.warn("GAS_API_URLが設定されていません。ローカルストレージのデータで起動します。");
+                loadFromLocalStorage();
+                return;
+            }
+
+            fetch(GAS_API_URL)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "success" && data.items && data.items.length > 0) {
+                        localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(data.items));
                     }
-                    c.continue();
+                    loadFromLocalStorage();
+                })
+                .catch(err => {
+                    console.error("クラウドからのデータ取得に失敗しました（オフライン起動）", err);
+                    loadFromLocalStorage();
+                });
+        }
+
+        function loadFromLocalStorage() {
+            const savedData = localStorage.getItem(STORAGE_KEY_PRODUCTS);
+            if (savedData) {
+                try {
+                    productsCache = JSON.parse(savedData);
+                    const datalist = document.getElementById("masterList");
+                    datalist.innerHTML = "";
+                    
+                    productsCache.forEach(item => {
+                        const itemName = (item.itemName || "").trim();
+                        if (itemName) {
+                            datalist.innerHTML += `<option value="${itemName}">`;
+                        }
+                    });
+                } catch (e) {
+                    console.error("localStorageのパースエラー:", e);
                 }
-            };
-        };
+            } else {
+                console.warn("localStorageに商品データが見つかりません。");
+            }
+
+            // 読み込み完了後にメッセージを非表示にする
+            const loadingMsg = document.getElementById("loadingMsg");
+            if (loadingMsg) loadingMsg.style.display = "none";
+        }
 
         function addTags() {
             const nameInput = document.getElementById('nameSearch');
@@ -154,120 +204,113 @@
                 return;
             }
 
-            if (!db) {
-                alert("データベースに接続されていません。");
+            if (productsCache.length === 0) {
+                alert("商品データが読み込まれていません。ネットワーク接続やURLを確認してください。");
                 return;
             }
 
-            const tx = db.transaction("products", "readonly");
-            const store = tx.objectStore("products");
-            let found = false;
+            const matchedItems = productsCache.filter(item => {
+                const itemName = (item.itemName || "").trim();
+                return itemName === targetName || itemName.includes(targetName);
+            });
 
-            store.openCursor().onsuccess = e => {
-                const cursor = e.target.result;
-                if(cursor) {
-                    const item = cursor.value;
-                    const itemName = (item.itemName || "").trim();
+            if (matchedItems.length === 0) {
+                alert("指定された商品が見つかりませんでした: " + targetName);
+                return;
+            }
 
-                    if(itemName === targetName || itemName.includes(targetName)) {
-                        found = true;
-                        const container = document.getElementById('tagContainer');
-                        
-                        for (let i = 0; i < qty; i++) {
-                            const div = document.createElement('div');
-                            div.className = 'tag';
-                            
-                            // 発注先別のカラークラスを付与
-                            const w = (item.wholesaler || "").trim();
-                            if (w.includes("ダイコー")) {
-                                div.classList.add('wholesaler-daiko');
-                            } else if (w.includes("e健康ショップ") || w.includes("東邦")) {
-                                div.classList.add('wholesaler-toho');
-                            } else if (w.includes("信公")) {
-                                div.classList.add('wholesaler-shinko');
-                            } else {
-                                div.classList.add('wholesaler-other');
-                            }
-                            
-                            const displayName = (item.priceTagItemName && item.priceTagItemName.trim() !== "") 
-                                ? item.priceTagItemName 
-                                : item.itemName;
+            const container = document.getElementById('tagContainer');
 
-                            const rawNote = (item.note || "").trim();
-                            const displayNote = (rawNote && rawNote !== "---") ? rawNote : "";
-
-                            // 商品区分（cleanCategory）がある場合のみバッジHTMLを生成
-                            const cleanCat = (item.cleanCategory || "").trim();
-                            let categoryHtml = "";
-                            if (cleanCat !== "") {
-                                categoryHtml = `<div class="category-badge">${cleanCat}</div>`;
-                            }
-
-                            // 税率（taxRate）が 10 の場合は上部エリアのクラスに 'tax-blue' を付与して青色にする
-                            let upperSectionClass = "upper-section";
-                            const taxRate = Number(item.taxRate);
-                            if (taxRate === 10) {
-                                upperSectionClass += " tax-blue";
-                            }
-
-                            // 用途がある場合のみ、中央に配置された短い白い線と用途文を挿入
-                            let descHtml = "";
-                            if (displayNote !== "") {
-                                descHtml = `
-                                    <div class="desc-container">
-                                        <div class="desc-divider"></div>
-                                        <div class="desc">${displayNote}</div>
-                                    </div>
-                                `;
-                            }
-
-                            div.innerHTML = `
-                                <button class="delete-btn" onclick="this.parentElement.remove()" title="この値札を削除">×</button>
-                                <div class="${upperSectionClass}">
-                                    ${categoryHtml}
-                                    <div class="name">${displayName}</div>
-                                    ${descHtml}
-                                </div>
-                                <div class="lower-section">
-                                    <div class="barcode-area">
-                                        <svg class="barcode"></svg>
-                                    </div>
-                                    <div class="price-box">¥${parseInt(item.sellingPrice || 0).toLocaleString()}</div>
-                                </div>
-                                <div class="color-bar"></div>
-                            `;
-                            container.appendChild(div);
-                            
-                            const svg = div.querySelector('.barcode');
-                            svg.setAttribute("preserveAspectRatio", "none");
-                            
-                            const codeStr = String(item.jan || "").trim();
-                            
-                            try {
-                                JsBarcode(svg, codeStr || "000000", { 
-                                    format: "code128", 
-                                    displayValue: false, 
-                                    width: 2.0, 
-                                    height: 24,
-                                    margin: 0
-                                });
-                            } catch(err) {
-                                console.error("バーコード生成エラー:", err);
-                            }
-                        }
-                        
-                        nameInput.value = "";
-                        qtyInput.value = "1";
-                        nameInput.focus();
-                        return;
+            matchedItems.forEach(item => {
+                for (let i = 0; i < qty; i++) {
+                    const div = document.createElement('div');
+                    div.className = 'tag';
+                    
+                    // 発注先別のカラークラスを付与
+                    const w = (item.wholesaler || "").trim();
+                    if (w.includes("ダイコー")) {
+                        div.classList.add('wholesaler-daiko');
+                    } else if (w.includes("e健康ショップ") || w.includes("東邦")) {
+                        div.classList.add('wholesaler-toho');
+                    } else if (w.includes("信公")) {
+                        div.classList.add('wholesaler-shinko');
+                    } else {
+                        div.classList.add('wholesaler-other');
                     }
-                    cursor.continue();
-                } else {
-                    if(!found) {
-                        alert("指定された商品が見つかりませんでした: " + targetName);
+                    
+                    const displayName = (item.priceTagItemName && item.priceTagItemName.trim() !== "") 
+                        ? item.priceTagItemName 
+                        : item.itemName;
+
+                    const rawNote = (item.note || "").trim();
+                    const displayNote = (rawNote && rawNote !== "---") ? rawNote : "";
+
+                    // 商品区分（cleanCategory / category）がある場合のみ赤色バッジHTMLを生成
+                    const cleanCat = (item.category || "").trim();
+                    let categoryHtml = "";
+                    if (cleanCat !== "") {
+                        categoryHtml = `<div class="category-badge">${cleanCat}</div>`;
+                    }
+
+                    // 上部エリアの背景色判定クラスを構築
+                    let upperSectionClass = "upper-section";
+                    
+                    // 税率（taxRate）が10の場合は青色に変更
+                    const taxRate = Number(item.taxRate);
+                    if (taxRate === 10) {
+                        upperSectionClass += " tax-blue";
+                    }
+
+                    // 用途がある場合のみ、中央に配置された短い白い線と用途文を挿入
+                    let descHtml = "";
+                    if (displayNote !== "") {
+                        descHtml = `
+                            <div class="desc-container">
+                                <div class="desc-divider"></div>
+                                <div class="desc">${displayNote}</div>
+                            </div>
+                        `;
+                    }
+
+                    div.innerHTML = `
+                        <button class="delete-btn" onclick="this.parentElement.remove()" title="この値札を削除">×</button>
+                        <div class="${upperSectionClass}">
+                            ${categoryHtml}
+                            <div class="name">${displayName}</div>
+                            ${descHtml}
+                        </div>
+                        <div class="lower-section">
+                            <div class="barcode-area">
+                                <svg class="barcode"></svg>
+                            </div>
+                            <div class="price-box">¥${parseInt(item.sellingPrice || 0).toLocaleString()}</div>
+                        </div>
+                        <div class="color-bar"></div>
+                    `;
+                    container.appendChild(div);
+                    
+                    const svg = div.querySelector('.barcode');
+                    svg.setAttribute("preserveAspectRatio", "none");
+                    
+                    const codeStr = String(item.jan || "").trim();
+                    
+                    try {
+                        JsBarcode(svg, codeStr || "000000", { 
+                            format: "code128", 
+                            displayValue: false, 
+                            width: 2.0, 
+                            height: 24,
+                            margin: 0
+                        });
+                    } catch(err) {
+                        console.error("バーコード生成エラー:", err);
                     }
                 }
-            };
+            });
+
+            nameInput.value = "";
+            qtyInput.value = "1";
+            nameInput.focus();
         }
     </script>
 </body>
