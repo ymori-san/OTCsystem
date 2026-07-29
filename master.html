@@ -202,104 +202,105 @@
         if (e.target.files.length > 0) handleFile(e.target.files[0]);
     });
 
-    // ファイルを解析してGAS経由でスプレッドシートに送信する処理
-    function handleFile(file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+// ファイルを解析してGAS経由でスプレッドシートに送信する処理
+function handleFile(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            
+            let itemsToSend = [];
+
+            rows.forEach((cols, index) => {
+                if (index === 0 && (isNaN(cols[0]) || cols[0].toString().length < 8)) return;
+                if (cols.length < 2 || !cols[0]) return;
+
+                const jan = cols[0].toString().trim();
+                const itemName = (cols[1] || "").toString().trim();
+                const priceTagItemName = (cols[2] || "").toString().trim() || itemName;
+                const wholesaler = (cols[3] || "").toString().trim();
                 
-                let itemsToSend = [];
+                const taxRaw = (cols[4] || "").toString();
+                const taxRate = taxRaw.includes("8") ? 8 : 10;
+                
+                const cost = forceNumeric(cols[5] || 0);
+                const listPrice = forceNumeric(cols[6] || 0);
+                const manualSelling = forceNumeric(cols[7] || 0);
+                const category = (cols[8] || "").toString().trim();
+                const note = (cols[9] || "").toString().trim();
+                
+                // 💡 職員価格（cols[10]）が存在し、かつ数値が入っていればそれを採用、なければ0とする
+                const manualStaffPrice = cols.length > 10 ? forceNumeric(cols[10] || 0) : 0;
 
-                rows.forEach((cols, index) => {
-                    if (index === 0 && (isNaN(cols[0]) || cols[0].toString().length < 8)) return;
-                    if (cols.length < 2 || !cols[0]) return;
-
-                    const jan = cols[0].toString().trim();
-                    const itemName = (cols[1] || "").toString().trim();
-                    const priceTagItemName = (cols[2] || "").toString().trim() || itemName;
-                    const wholesaler = (cols[3] || "").toString().trim();
-                    
-                    const taxRaw = (cols[4] || "").toString();
-                    const taxRate = taxRaw.includes("8") ? 8 : 10;
-                    
-                    const cost = forceNumeric(cols[5] || 0);
-                    const listPrice = forceNumeric(cols[6] || 0);
-                    const manualSelling = forceNumeric(cols[7] || 0);
-                    const category = (cols[8] || "").toString().trim();
-                    const note = (cols[9] || "").toString().trim();
-                    const manualStaffPrice = forceNumeric(cols[10] || 0); // 10列目を職員価格として取得
-
-                    // 通常売価の計算
-                    let selling = 0;
-                    if (manualSelling > 0) {
-                        selling = manualSelling;
-                    } else {
-                        const costBasedSelling = Math.round((cost * (taxRate === 8 ? 1.08 * 1.3 : 1.1 * 1.4)) / 10) * 10;
-                        const listBasedSelling = Math.round((listPrice * (taxRate === 8 ? 1.08 : 1.1)) / 10) * 10;
-                        selling = (listBasedSelling > costBasedSelling) ? listBasedSelling : costBasedSelling;
-                    }
-
-                    // 職員価格の計算 (仕入れ値 × 税率 × 1.15)
-                    let staff = 0;
-                    if (manualStaffPrice > 0) {
-                        staff = manualStaffPrice;
-                    } else {
-                        const taxMultiplier = (taxRate === 8) ? 1.08 : 1.1;
-                        staff = Math.round(cost * taxMultiplier * 1.15 / 10) * 10;
-                    }
-
-                    itemsToSend.push({
-                        jan, itemName, priceTagItemName, wholesaler, taxRate,
-                        costPrice: cost, listPrice, sellingPrice: selling,
-                        category, note, staffPrice: staff
-                    });
-                });
-
-                if (itemsToSend.length === 0) {
-                    alert("有効なデータが見つかりませんでした。");
-                    return;
+                // 通常売価の計算
+                let selling = 0;
+                if (manualSelling > 0) {
+                    selling = manualSelling;
+                } else {
+                    const costBasedSelling = Math.round((cost * (taxRate === 8 ? 1.08 * 1.3 : 1.1 * 1.4)) / 10) * 10;
+                    const listBasedSelling = Math.round((listPrice * (taxRate === 8 ? 1.08 : 1.1)) / 10) * 10;
+                    selling = (listBasedSelling > costBasedSelling) ? listBasedSelling : costBasedSelling;
                 }
 
-                // GASへPOST送信
-                const loading = document.getElementById("loading");
-                loading.innerText = "🔄 スプレッドシートへ同期中...";
-                loading.style.display = "block";
+                // 職員価格の計算 (仕入れ値 × 税率 × 1.15)
+                let staff = 0;
+                if (manualStaffPrice > 0) {
+                    staff = manualStaffPrice;
+                } else {
+                    const taxMultiplier = (taxRate === 8) ? 1.08 : 1.1;
+                    staff = Math.round(cost * taxMultiplier * 1.15 / 10) * 10;
+                }
 
-                fetch(GAS_API_URL, {
-                    method: "POST",
-                    body: JSON.stringify({ action: "save", items: itemsToSend })
-                })
-                .then(res => res.json())
-                .then(resData => {
-                    loading.style.display = "none";
-                    if (resData.status === "success") {
-                        alert(`${resData.count}件のデータをスプレッドシートに同期しました！`);
-                        // 発注管理システム側でも即座に読めるようにローカルストレージを更新
-                        localStorage.setItem("hatchu_products", JSON.stringify(itemsToSend));
-                        fileInput.value = "";
-                        loadMasterData(); // 最新データを再読み込み
-                    } else {
-                        alert("同期に失敗しました: " + resData.message);
-                    }
-                })
-                .catch(err => {
-                    loading.style.display = "none";
-                    console.error(err);
-                    alert("通信エラーが発生しました。");
+                itemsToSend.push({
+                    jan, itemName, priceTagItemName, wholesaler, taxRate,
+                    costPrice: cost, listPrice, sellingPrice: selling,
+                    category, note, staffPrice: staff
                 });
+            });
 
-            } catch (err) {
-                console.error(err);
-                alert("ファイルの読み込みに失敗しました。正しいExcel/CSVファイルか確認してください。");
+            if (itemsToSend.length === 0) {
+                alert("有効なデータが見つかりませんでした。");
+                return;
             }
-        };
-        reader.readAsArrayBuffer(file);
-    }
+
+            // GASへPOST送信
+            const loading = document.getElementById("loading");
+            loading.innerText = "🔄 スプレッドシートへ同期中...";
+            loading.style.display = "block";
+
+            fetch(GAS_API_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "save", items: itemsToSend })
+            })
+            .then(res => res.json())
+            .then(resData => {
+                loading.style.display = "none";
+                if (resData.status === "success") {
+                    alert(`${resData.count}件のデータをスプレッドシートに同期しました！`);
+                    localStorage.setItem("hatchu_products", JSON.stringify(itemsToSend));
+                    fileInput.value = "";
+                    loadMasterData();
+                } else {
+                    alert("同期に失敗しました: " + resData.message);
+                }
+            })
+            .catch(err => {
+                loading.style.display = "none";
+                console.error(err);
+                alert("通信エラーが発生しました。");
+            });
+
+        } catch (err) {
+            console.error(err);
+            alert("ファイルの読み込みに失敗しました。正しいExcel/CSVファイルか確認してください。");
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
 </script>
 </body>
 </html>
