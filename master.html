@@ -306,7 +306,7 @@
         }
     }
 
-    // JANを読み取った・入力したときの処理
+    // JANを読み取った・入力したときの処理（既存データをフォームにしっかり反映）
     function searchAndShow(jan) {
         const cleanJan = jan.trim();
         if (!cleanJan) return;
@@ -322,13 +322,13 @@
         if (item) {
             title.innerText = "✏️ 登録済み商品を発見しました（編集できます）";
             document.getElementById("editItemName").value = item.itemName || "";
-            document.getElementById("editCost").value = item.costPrice || 0;
+            document.getElementById("editCost").value = (item.costPrice !== undefined && item.costPrice !== null) ? item.costPrice : "";
             document.getElementById("editCategory").value = item.category || "";
             document.getElementById("editNote").value = item.note || "";
             document.getElementById("editWholesaler").value = item.wholesaler || "";
-            document.getElementById("editTax").value = item.taxRate || 10;
-            document.getElementById("editListPrice").value = item.listPrice || 0;
-            document.getElementById("editSelling").value = item.sellingPrice || "";
+            document.getElementById("editTax").value = (item.taxRate !== undefined && item.taxRate !== null) ? item.taxRate : 10;
+            document.getElementById("editListPrice").value = (item.listPrice !== undefined && item.listPrice !== null) ? item.listPrice : "";
+            document.getElementById("editSelling").value = (item.sellingPrice !== undefined && item.sellingPrice !== null) ? item.sellingPrice : "";
         } else {
             title.innerText = "✨ 未登録の商品です（新規追加できます）";
             document.getElementById("editItemName").value = "";
