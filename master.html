@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>商品マスタ管理（クラウド版）</title>
+    <!-- html5-qrcode ライブラリ -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <!-- SheetJS (Excel読み込み用ライブラリ) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -13,11 +14,19 @@
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
         h1 { border-left: 5px solid #e28743; padding-left: 10px; font-size: 20px; }
         h2 { font-size: 16px; margin: 0 0 10px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        #reader { width: 100%; max-width: 400px; margin: 0 auto; }
+        
+        /* カメラ表示エリア */
+        #reader { width: 100%; max-width: 400px; margin: 0 auto; position: relative; overflow: hidden; border-radius: 6px; }
+        #reader video { width: 100% !important; object-fit: cover; }
+        
+        /* ズームコントロール用スタイル */
+        .zoom-container { max-width: 400px; margin: 10px auto 0 auto; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #555; }
+        .zoom-container input[type="range"] { flex: 1; cursor: pointer; }
+
         button { background-color: #e28743; color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 5px; }
         .btn-csv { background-color: #28a745; margin-top: 10px; }
         .btn-update { background-color: #007bff; margin-top: 15px; }
-        .btn-toggle { background-color: #6c757d; font-size: 13px; padding: 8px; margin: 10px 0; }
+        .btn-toggle { background-color: #6c757d; font-size: 13px; padding: 8px; margin: 10px 0; width: 100%; }
         .master-item { padding: 10px; border-bottom: 1px solid #f1f3f5; display: flex; justify-content: space-between; align-items: center; }
         
         /* 検索窓のスタイル */
@@ -74,10 +83,21 @@
 <div class="container" id="mainContent" style="display: none;">
     <div class="card">
         <h1>📸 カメラでJAN読み取り・個別編集</h1>
+        <p style="font-size: 12px; color: #666; margin-bottom: 5px;">💡 カメラ画面をタップするとその場所にピントが合います</p>
+        
+        <!-- カメラ描画領域 -->
         <div id="reader"></div>
+
+        <!-- 🔍 ズーム調整スライダー（カメラ起動後に自動調整されます） -->
+        <div class="zoom-container" id="zoomControlArea" style="display: none;">
+            <span>🔍 ズーム:</span>
+            <input type="range" id="zoomRange" min="1" max="1" step="0.1" value="1" oninput="changeZoom(this.value)">
+            <span id="zoomValue">1.0x</span>
+        </div>
+
         <input type="text" id="manualJan" placeholder="読み取ったJANがここに表示されます" style="width:100%; padding:10px; margin-top:10px; box-sizing:border-box;" onchange="searchAndShow(this.value)">
 
-        <!-- 💡 カメラ読み取り後に現れる個別編集エリア -->
+        <!-- 💡 個別編集エリア -->
         <div id="editArea">
             <h3 id="editStatusTitle" style="margin-top:0; color:#d9480f; font-size:15px;"></h3>
             
@@ -134,7 +154,6 @@
     <div class="card">
         <h2>📋 データの管理と出力</h2>
         <div id="loading">🔄 クラウドと通信中...</div>
-        <!-- ドラッグ＆ドロップ用エリア -->
         <div id="dropZone" class="drop-zone">
             <p>📁 Excel(.xlsx) または CSVファイルをここにドラッグ＆ドロップ</p>
             <span>またはクリックしてファイルを選択</span>
@@ -156,6 +175,8 @@
     const ACCESS_PASSWORD = "Okenko.otc"; 
 
     let productCache = {};
+    let html5QrCode = null;
+    let activeVideoTrack = null; // カメラのビデオトラック（ズーム・フォーカス制御用）
 
     function checkPassword() {
         const input = document.getElementById("passwordInput").value;
@@ -163,6 +184,7 @@
             document.getElementById("authOverlay").style.display = "none";
             document.getElementById("mainContent").style.display = "block";
             loadMasterData();
+            initAdvancedScanner(); // 高機能カメラ起動
         } else {
             document.getElementById("authError").style.display = "block";
         }
@@ -185,7 +207,7 @@
                     data.items.forEach(item => {
                         productCache[item.jan] = item;
                     });
-                    filterMasterList(); // リスト描画を更新
+                    filterMasterList();
                 } else {
                     alert("データの取得に失敗しました: " + data.message);
                 }
@@ -197,12 +219,84 @@
             });
     }
 
-    // カメラ読み取り
-    const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
-    html5QrcodeScanner.render((text) => {
-        document.getElementById("manualJan").value = text;
-        searchAndShow(text);
-    });
+    // 📸 高機能カメラ＆ズーム・タップフォーカス初期化処理
+    async function initAdvancedScanner() {
+        html5QrCode = new Html5Qrcode("reader");
+        const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+
+        try {
+            // 背面カメラを優先して起動
+            await html5QrCode.start(
+                { facingMode: "environment" },
+                config,
+                (decodedText) => {
+                    // 読み取り成功時の処理
+                    document.getElementById("manualJan").value = decodedText;
+                    searchAndShow(decodedText);
+                },
+                (errorMessage) => {
+                    // スキャン中エラー（無視してOK）
+                }
+            );
+
+            // 起動成功後、実際のメディアトラック（カメラ制御権）を取得
+            setTimeout(() => {
+                const videoElement = document.querySelector("#reader video");
+                if (videoElement && videoElement.srcObject) {
+                    const stream = videoElement.srcObject;
+                    activeVideoTrack = stream.getVideoTracks()[0];
+                    setupCameraCapabilities(activeVideoTrack);
+
+                    // タップフォーカス機能の設定
+                    videoElement.addEventListener("click", async (e) => {
+                        if (activeVideoTrack && typeof activeVideoTrack.applyConstraints === "function") {
+                            try {
+                                // フォーカスモードをコンティニュアスまたはマニュアルに調整
+                                await activeVideoTrack.applyConstraints({
+                                    advanced: [{ focusMode: "continuous" }]
+                                });
+                            } catch (err) {
+                                console.log("Tap focus not fully supported on this device.");
+                            }
+                        }
+                    });
+                }
+            }, 1000);
+
+        } else (err) => {
+            console.error("カメラ起動エラー: ", err);
+        }
+    }
+
+    // カメラのズーム機能（対応している端末のみバーを表示）
+    function setupCameraCapabilities(videoTrack) {
+        const capabilities = videoTrack.getCapabilities();
+        const zoomControlArea = document.getElementById("zoomControlArea");
+        const zoomRange = document.getElementById("zoomRange");
+
+        if (capabilities && capabilities.zoom) {
+            zoomRange.min = capabilities.zoom.min;
+            zoomRange.max = capabilities.zoom.max;
+            zoomRange.step = capabilities.zoom.step || 0.1;
+            zoomRange.value = videoTrack.getSettings().zoom || capabilities.zoom.min;
+            document.getElementById("zoomValue").innerText = Number(zoomRange.value).toFixed(1) + "x";
+            zoomControlArea.style.display = "flex"; // ズーム対応端末ならスライダーを表示
+        }
+    }
+
+    // ズームスライダー操作時
+    async function changeZoom(val) {
+        if (!activeVideoTrack) return;
+        const numVal = parseFloat(val);
+        document.getElementById("zoomValue").innerText = numVal.toFixed(1) + "x";
+        try {
+            await activeVideoTrack.applyConstraints({
+                advanced: [{ zoom: numVal }]
+            });
+        } catch (err) {
+            console.error("ズーム適用エラー: ", err);
+        }
+    }
 
     // 「すべて表示」ボタンの切り替え処理
     function toggleDetails() {
@@ -329,7 +423,6 @@
     // 💡 全角・半角カタカナの揺らぎを吸収するためのヘルパー関数
     function normalizeText(str) {
         if (!str) return "";
-        // 半角カタカナを全角カタカナに変換し、さらに大文字小文字などを揃える
         return str.toString()
             .replace(/[\uFF61-\uFF9F]/g, match => {
                 const map = {
@@ -363,7 +456,6 @@
             const itemNameNormalized = normalizeText(item.itemName || "");
             const janNormalized = normalizeText(jan);
 
-            // 商品名またはJANコードにキーワードが含まれているか判定
             if (!query || itemNameNormalized.includes(query) || janNormalized.includes(query)) {
                 matchCount++;
                 list.innerHTML += `<div class="master-item"><span>${item.itemName} (${jan})</span><span>売価: ¥${Number(item.sellingPrice).toLocaleString()} / 職員: ¥${Number(item.staffPrice || 0).toLocaleString()}</span></div>`;
