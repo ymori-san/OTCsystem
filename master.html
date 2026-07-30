@@ -285,7 +285,6 @@
                 { facingMode: "environment" },
                 config,
                 async (decodedText) => {
-                    // 🚀 JAN読み取り成功時にカメラを停止して元の表示（ボタン表示）に戻す処理
                     if (html5QrCode && html5QrCode.isScanning) {
                         try {
                             await html5QrCode.stop();
@@ -299,7 +298,6 @@
                     document.getElementById("startCameraBtn").style.display = "block";
                     activeVideoTrack = null;
 
-                    // 検索・表示処理を実行
                     document.getElementById("manualJan").value = decodedText;
                     searchAndShow(decodedText);
                 },
@@ -519,7 +517,11 @@
         .then(resData => {
             loading.style.display = "none";
             if (resData.status === "success") {
-                alert("商品情報を正常に更新・保存しました！");
+                // 💡 保存成功後に「値札を作りますか？」と尋ねる処理
+                if (confirm("商品情報を正常に更新・保存しました！\n続けてこの商品の値札を作りますか？")) {
+                    window.open(`tags.html?jan=${jan}`, '_blank');
+                }
+
                 document.getElementById("editArea").style.display = "none";
                 document.getElementById("manualJan").value = "";
                 loadMasterData();
@@ -541,7 +543,7 @@
                 const map = {
                     'ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ','ｶ':'カ','ｷ':'キ','ｸ':'ク','ｹ':'ケ','ｺ':'コ',
                     'ｻ':'サ','ｼ':'シ','ｽ':'ス','ｾ':'セ','ｿ':'ソ','ﾀ':'タ','ﾁ':'チ','ﾂ':'ツ','ﾃ':'テ','ﾄ':'ト',
-                    'ﾅ':'ナ','ﾆ':'ニ','ﾇ':'ヌ','ﾈ':'ネ','ﾉ':'ノ','ﾊ':'ハ','ﾋ':'ヒ','ﾌ':'フ','ﾍ':'ヘ','ﾎ':'ホ',
+                    'ﾅ':'ナ','ﾆ':'ニ','ﾇ':'ヌ','ﾈ':'ネ','ﾉ':'ノ','ﾊ':'ハ','ﾋ':'ヒ','ﾌ':'フ','ﾍ':'ヘ','ﾎ':'ﾎ',
                     'ﾏ':'マ','ﾐ':'ミ','ﾑ':'ム','ﾒ':'メ','ﾓ':'モ','ﾔ':'ヤ','ﾕ':'ユ','ﾖ':'ヨ',
                     'ﾗ':'ラ','ﾘ':'リ','ﾙ':'ル','ﾚ':'レ','ﾛ':'ロ','ﾜ':'ワ','ｦ':'ヲ','ﾝ':'ン',
                     'ｧ':'ァ','ｨ':'ィ','ｩ':'ゥ','ｪ':'ェ','ｫ':'ォ','ｯ':'ッ','ｬ':'ャ','ｭ':'ュ','ｮ':'ョ',
