@@ -134,9 +134,8 @@
             const loadingMsg = document.getElementById("loadingMsg");
             if (loadingMsg) loadingMsg.style.display = "inline";
 
-            if (!GAS_API_URL || GAS_API_URL.includes("ここにGASのウェブアプリURL")) {
+            if (!GAS_API_URL || GAS_API_URL.includes("https://script.google.com/macros/s/AKfycbxavToYkOGbRJE25AGUMHLoQKx5XHfowr-oTxXC9eN-P6dNQdD4xabTi510HUshWMmjZA/exec")) {
                 loadFromLocalStorage();
-                checkUrlParamAndAdd(); // 💡 URLパラメータのチェック
                 return;
             }
 
@@ -147,12 +146,10 @@
                         localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(data.items));
                     }
                     loadFromLocalStorage();
-                    checkUrlParamAndAdd(); // 💡 クラウドからの取得完了後に実行
                 })
                 .catch(err => {
                     console.error("クラウドからのデータ取得に失敗しました", err);
                     loadFromLocalStorage();
-                    checkUrlParamAndAdd(); // 💡 エラー時もローカルデータからチェック
                 });
         }
 
@@ -174,11 +171,15 @@
                     console.error("localStorageのパースエラー:", e);
                 }
             }
+            
             const loadingMsg = document.getElementById("loadingMsg");
             if (loadingMsg) loadingMsg.style.display = "none";
+
+            // 💡 データ読み込み・キャッシュ構築が完全に終わったここで自動生成をキックする
+            checkUrlParamAndAdd();
         }
 
-        // 🔗 URLの ?jan=XXXXXX を検知して自動で値札を追加する新機能
+        // 🔗 URLの ?jan=XXXXXX を検知して自動で値札を追加する処理
         function checkUrlParamAndAdd() {
             const urlParams = new URLSearchParams(window.location.search);
             const targetJan = urlParams.get('jan');
@@ -208,7 +209,6 @@
                 return;
             }
 
-            // 商品名だけでなくJANコードでも部分一致・完全一致できるように修正
             const matchedItems = productsCache.filter(item => {
                 const itemName = (item.itemName || "").trim();
                 const jan = String(item.jan || "").trim();
