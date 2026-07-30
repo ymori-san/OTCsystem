@@ -274,7 +274,6 @@
 
         html5QrCode = new Html5Qrcode("reader");
         
-        // 🚀 レスポンス改善設定（FPS向上とスキャン範囲の最適化）
         const config = { 
             fps: 15, 
             qrbox: { width: 280, height: 120 },
@@ -282,11 +281,25 @@
         };
 
         try {
-            // 💡 修正：エラー原因だった解像度プロパティを削除し、正しい形式に戻しました
             await html5QrCode.start(
                 { facingMode: "environment" },
                 config,
-                (decodedText) => {
+                async (decodedText) => {
+                    // 🚀 JAN読み取り成功時にカメラを停止して元の表示（ボタン表示）に戻す処理
+                    if (html5QrCode && html5QrCode.isScanning) {
+                        try {
+                            await html5QrCode.stop();
+                            html5QrCode.clear();
+                        } catch (stopErr) {
+                            console.error("カメラ停止エラー: ", stopErr);
+                        }
+                    }
+                    document.getElementById("reader").style.display = "none";
+                    document.getElementById("zoomControlArea").style.display = "none";
+                    document.getElementById("startCameraBtn").style.display = "block";
+                    activeVideoTrack = null;
+
+                    // 検索・表示処理を実行
                     document.getElementById("manualJan").value = decodedText;
                     searchAndShow(decodedText);
                 },
