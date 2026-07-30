@@ -45,6 +45,19 @@
         /* 検索窓のスタイル */
         .search-box { width: 100%; padding: 10px; box-sizing: border-box; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 10px; }
 
+        /* 💡 検索候補サジェストのスタイル */
+        .suggest-container { position: relative; width: 100%; }
+        #suggestList {
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: white; border: 1px solid #ccc; border-top: none;
+            max-height: 200px; overflow-y: auto; z-index: 100;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: none; border-radius: 0 0 4px 4px;
+        }
+        .suggest-item {
+            padding: 10px; font-size: 13px; border-bottom: 1px solid #f1f3f5; cursor: pointer;
+        }
+        .suggest-item:hover { background-color: #f8f9fa; color: #e28743; }
+
         /* 編集フォームのスタイル */
         .edit-form-group { margin-bottom: 10px; }
         .edit-form-group label { display: block; font-size: 12px; font-weight: bold; color: #555; margin-bottom: 3px; }
@@ -97,8 +110,7 @@
     <div class="card">
         <div class="header-area">
             <h1>📸 カメラでJAN読み取り・個別編集</h1>
-            <!-- 🔗 タブを閉じるボタンに変更 -->
-            <button class="btn-back" onclick="closeWindow()">✖ このページを閉じる</button>
+            <button class="btn-back" onclick="closeWindow()">✖ このタブを閉じる</button>
         </div>
         
         <!-- カメラ起動ボタン -->
@@ -116,7 +128,11 @@
             <span id="zoomValue">1.0x</span>
         </div>
 
-        <input type="text" id="manualJan" placeholder="読み取ったJANがここに表示されます" style="width:100%; padding:10px; margin-top:10px; box-sizing:border-box;" onchange="searchAndShow(this.value)">
+        <!-- 💡 JAN入力 兼 商品名文字検索ボックス -->
+        <div class="suggest-container" style="margin-top:10px;">
+            <input type="text" id="manualJan" class="search-box" placeholder="JAN入力 または 商品名で部分一致検索（例：ロキソニン）" style="margin-bottom:0;" oninput="handleManualInput(this.value)">
+            <div id="suggestList"></div>
+        </div>
 
         <!-- 💡 個別編集エリア -->
         <div id="editArea">
@@ -185,7 +201,6 @@
 
     <div class="card">
         <h2>🔍 登録済みマスタ</h2>
-        <!-- 🔗 値札を作るボタン等を追加 -->
         <div class="master-action-buttons">
             <a href="tags.html" target="_blank" class="btn-link-tab">🏷️ 値札を作る ↗</a>
         </div>
@@ -203,10 +218,8 @@
     let html5QrCode = null;
     let activeVideoTrack = null;
 
-    // 🔗 タブ（ウィンドウ）を閉じる関数
     function closeWindow() {
         window.close();
-        // ブラウザのセキュリティ仕様により自動で閉じられない場合はメッセージを表示
         setTimeout(() => {
             alert("ブラウザのセキュリティ制限によりタブを自動で閉じられませんでした。お手数ですがこのタブを手動で閉じてください。");
         }, 300);
@@ -340,10 +353,68 @@
         }
     }
 
+    // 💡 入力内容に応じて、完全一致JANの読み込み or 商品名サジェスト検索を行う
+    function handleManualInput(val) {
+        const query = val.trim();
+        const suggestList = document.getElementById("suggestList");
+        suggestList.innerHTML = "";
+
+        if (!query) {
+            suggestList.style.display = "none";
+            return;
+        }
+
+        // 1. 完全一致のJANコードがすでに存在すれば一発でそれを表示
+        if (productCache[query]) {
+            suggestList.style.display = "none";
+            searchAndShow(query);
+            return;
+        }
+
+        // 2. 商品名またはJAN部分一致で候補を絞り込み
+        const normalizedQuery = normalizeText(query);
+        let matches = [];
+
+        Object.values(productCache).forEach(item => {
+            const normName = normalizeText(item.itemName || "");
+            const normJan = normalizeText(item.jan || "");
+            if (normName.includes(normalizedQuery) || normJan.includes(normalizedQuery)) {
+                matches.push(item);
+            }
+        });
+
+        if (matches.length > 0) {
+            matches.slice(0, 15).forEach(item => { // 最大15件まで表示
+                const div = document.createElement("div");
+                div.className = "suggest-item";
+                div.innerHTML = `<strong>${item.itemName}</strong> <span style="color:#888; font-size:11px;">(${item.jan})</span>`;
+                div.onclick = () => {
+                    document.getElementById("manualJan").value = item.jan;
+                    suggestList.style.display = "none";
+                    searchAndShow(item.jan);
+                };
+                suggestList.appendChild(div);
+            });
+            suggestList.style.display = "block";
+        } else {
+            // 該当なしの場合、入力された文字列をそのまま新規JANと見なして直接セットできる選択肢を出す
+            const div = document.createElement("div");
+            div.className = "suggest-item";
+            div.innerHTML = `<span style="color:#d9480f;">✨ "${query}" を新規JANとして登録・編集する</span>`;
+            div.onclick = () => {
+                suggestList.style.display = "none";
+                searchAndShow(query);
+            };
+            suggestList.appendChild(div);
+            suggestList.style.display = "block";
+        }
+    }
+
     function searchAndShow(jan) {
         const cleanJan = jan.trim();
         if (!cleanJan) return;
 
+        document.getElementById("suggestList").style.display = "none";
         const item = productCache[cleanJan];
         const editArea = document.getElementById("editArea");
         const title = document.getElementById("editStatusTitle");
