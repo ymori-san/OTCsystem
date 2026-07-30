@@ -33,7 +33,14 @@
         .log-date { color: #868e96; font-size: 11px; }
         .master-section { background-color: #fff9db; border: 1px solid #ffe3e3; }
         .master-header-box { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #d9480f; padding-bottom: 5px; margin-top: 20px; }
-        .btn-open-tab { background-color: #e28743; color: white; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; }
+        
+        /* 🔗 ボタンを並べるエリアのスタイル */
+        .master-action-buttons { display: flex; gap: 8px; margin-top: 10px; }
+        .btn-open-tab { background-color: #e28743; color: white; text-decoration: none; padding: 8px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; text-align: center; flex: 1; display: inline-block; }
+        .btn-open-tab:hover { background-color: #cf7735; }
+        .btn-tag-tab { background-color: #20c997; }
+        .btn-tag-tab:hover { background-color: #17b886; }
+
         .master-count { font-size: 14px; color: #666; margin: 10px 0; font-weight: bold; }
         .search-input { width: 100%; padding: 6px 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background-color: #f8f9fa; }
         .master-list-container { max-height: 250px; overflow-y: auto; border: 1px solid #ddd; background: white; padding: 10px; border-radius: 4px; }
@@ -146,7 +153,11 @@
             <div class="card master-section">
                 <div class="master-header-box">
                     <h2>登録済み商品</h2>
+                </div>
+                <!-- 🔗 ボタン群を追加 -->
+                <div class="master-action-buttons">
                     <a href="master.html" target="_blank" class="btn-open-tab">商品情報一覧・登録 ↗</a>
+                    <a href="tags.html" target="_blank" class="btn-open-tab btn-tag-tab">値札を作る ↗</a>
                 </div>
                 <div id="masterCount" class="master-count">登録件数：0 件</div>
                 <input type="text" id="masterSearchInput" class="search-input" placeholder="🔍 検索..." oninput="filterMasterList()">
@@ -159,7 +170,6 @@
     <script>
         let currentPrintingWholesaler = null;
         
-        // ⚠️ 設定：ご自身のGASのウェブアプリURLをここに貼り付けてください
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxavToYkOGbRJE25AGUMHLoQKx5XHfowr-oTxXC9eN-P6dNQdD4xabTi510HUshWMmjZA/exec"; 
 
         const STORAGE_KEY_PRODUCTS = "hatchu_products";
@@ -282,7 +292,6 @@
                 
                 datalist.innerHTML += `<option value="${name}">`;
                 if (keyword === "" || translateHanToZen(name).toLowerCase().includes(keyword)) {
-                    // 売価の表示フォーマット（売価データがあれば「売価: ○○円」、なければ未設定）
                     let sellingPriceText = (p.sellingPrice !== undefined && p.sellingPrice !== "") ? Number(p.sellingPrice).toLocaleString() + "円" : "売価未設定";
                     
                     itemsListDiv.innerHTML += `
