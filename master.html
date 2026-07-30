@@ -274,7 +274,7 @@
 
         html5QrCode = new Html5Qrcode("reader");
         
-        // 🚀 レスポンス改善：FPS向上と高解像度化の抑制による軽量設定
+        // 🚀 レスポンス改善設定（FPS向上とスキャン範囲の最適化）
         const config = { 
             fps: 15, 
             qrbox: { width: 280, height: 120 },
@@ -282,13 +282,9 @@
         };
 
         try {
-            // 🚀 レスポンス改善：画質を抑えて動作を軽くするカメラ制約を追加
+            // 💡 修正：エラー原因だった解像度プロパティを削除し、正しい形式に戻しました
             await html5QrCode.start(
-                { 
-                    facingMode: "environment",
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
-                },
+                { facingMode: "environment" },
                 config,
                 (decodedText) => {
                     document.getElementById("manualJan").value = decodedText;
