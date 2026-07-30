@@ -16,7 +16,7 @@
         h2 { font-size: 16px; margin: 0 0 10px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
         
         /* カメラ表示エリア */
-        #reader { width: 100%; max-width: 400px; margin: 0 auto; position: relative; overflow: hidden; border-radius: 6px; }
+        #reader { width: 100%; max-width: 400px; margin: 0 auto; position: relative; overflow: hidden; border-radius: 6px; display: none; }
         #reader video { width: 100% !important; object-fit: cover; }
         
         /* ズームコントロール用スタイル */
@@ -27,6 +27,7 @@
         .btn-csv { background-color: #28a745; margin-top: 10px; }
         .btn-update { background-color: #007bff; margin-top: 15px; }
         .btn-toggle { background-color: #6c757d; font-size: 13px; padding: 8px; margin: 10px 0; width: 100%; }
+        .btn-camera { background-color: #17a2b8; margin-bottom: 10px; }
         .master-item { padding: 10px; border-bottom: 1px solid #f1f3f5; display: flex; justify-content: space-between; align-items: center; }
         
         /* 検索窓のスタイル */
@@ -83,6 +84,10 @@
 <div class="container" id="mainContent" style="display: none;">
     <div class="card">
         <h1>📸 カメラでJAN読み取り・個別編集</h1>
+        
+        <!-- カメラ起動ボタン -->
+        <button class="btn-camera" id="startCameraBtn" onclick="initAdvancedScanner()">📷 カメラを起動する</button>
+
         <p style="font-size: 12px; color: #666; margin-bottom: 5px;">💡 カメラ画面をタップするとその場所にピントが合います</p>
         
         <!-- カメラ描画領域 -->
@@ -184,7 +189,7 @@
             document.getElementById("authOverlay").style.display = "none";
             document.getElementById("mainContent").style.display = "block";
             loadMasterData();
-            initAdvancedScanner();
+            // ログイン成功時は自動でカメラを起動せず、ボタンで起動するように変更
         } else {
             document.getElementById("authError").style.display = "block";
         }
@@ -219,8 +224,14 @@
             });
     }
 
-    // 📸 高機能カメラ＆ズーム・タップフォーカス初期化処理
+    // 📸 高機能カメラ＆ズーム・タップフォーカス初期化処理（ボタン押下で実行）
     async function initAdvancedScanner() {
+        const startBtn = document.getElementById("startCameraBtn");
+        const readerDiv = document.getElementById("reader");
+
+        startBtn.style.display = "none";
+        readerDiv.style.display = "block";
+
         html5QrCode = new Html5Qrcode("reader");
         const config = { fps: 10, qrbox: { width: 250, height: 150 } };
 
@@ -260,6 +271,9 @@
 
         } catch (err) {
             console.error("カメラ起動エラー: ", err);
+            alert("カメラを起動できませんでした。カメラの権限やブラウザ設定をご確認ください。");
+            startBtn.style.display = "block";
+            readerDiv.style.display = "none";
         }
     }
 
@@ -306,7 +320,7 @@
         }
     }
 
-    // JANを読み取った・入力したときの処理（既存データをフォームにしっかり反映）
+    // JANを読み取った・入力したときの処理
     function searchAndShow(jan) {
         const cleanJan = jan.trim();
         if (!cleanJan) return;
