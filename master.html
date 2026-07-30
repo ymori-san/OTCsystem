@@ -273,11 +273,22 @@
         readerDiv.style.display = "block";
 
         html5QrCode = new Html5Qrcode("reader");
-        const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+        
+        // 🚀 レスポンス改善：FPS向上と高解像度化の抑制による軽量設定
+        const config = { 
+            fps: 15, 
+            qrbox: { width: 280, height: 120 },
+            aspectRatio: 1.77778
+        };
 
         try {
+            // 🚀 レスポンス改善：画質を抑えて動作を軽くするカメラ制約を追加
             await html5QrCode.start(
-                { facingMode: "environment" },
+                { 
+                    facingMode: "environment",
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                },
                 config,
                 (decodedText) => {
                     document.getElementById("manualJan").value = decodedText;
@@ -353,7 +364,6 @@
         }
     }
 
-    // 💡 入力内容に応じて、完全一致JANの読み込み or 商品名サジェスト検索を行う
     function handleManualInput(val) {
         const query = val.trim();
         const suggestList = document.getElementById("suggestList");
@@ -364,14 +374,12 @@
             return;
         }
 
-        // 1. 完全一致のJANコードがすでに存在すれば一発でそれを表示
         if (productCache[query]) {
             suggestList.style.display = "none";
             searchAndShow(query);
             return;
         }
 
-        // 2. 商品名またはJAN部分一致で候補を絞り込み
         const normalizedQuery = normalizeText(query);
         let matches = [];
 
@@ -384,7 +392,7 @@
         });
 
         if (matches.length > 0) {
-            matches.slice(0, 15).forEach(item => { // 最大15件まで表示
+            matches.slice(0, 15).forEach(item => {
                 const div = document.createElement("div");
                 div.className = "suggest-item";
                 div.innerHTML = `<strong>${item.itemName}</strong> <span style="color:#888; font-size:11px;">(${item.jan})</span>`;
@@ -397,7 +405,6 @@
             });
             suggestList.style.display = "block";
         } else {
-            // 該当なしの場合、入力された文字列をそのまま新規JANと見なして直接セットできる選択肢を出す
             const div = document.createElement("div");
             div.className = "suggest-item";
             div.innerHTML = `<span style="color:#d9480f;">✨ "${query}" を新規JANとして登録・編集する</span>`;
