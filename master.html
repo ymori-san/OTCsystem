@@ -28,6 +28,12 @@
         .btn-update { background-color: #007bff; margin-top: 15px; }
         .btn-toggle { background-color: #6c757d; font-size: 13px; padding: 8px; margin: 10px 0; width: 100%; }
         .btn-camera { background-color: #17a2b8; margin-bottom: 10px; }
+        
+        /* 🔗 ボタンを並べるエリアのスタイル */
+        .master-action-buttons { display: flex; gap: 8px; margin-bottom: 10px; }
+        .btn-link-tab { background-color: #20c997; color: white; text-decoration: none; padding: 8px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; text-align: center; flex: 1; display: inline-block; }
+        .btn-link-tab:hover { background-color: #17b886; }
+
         .master-item { padding: 10px; border-bottom: 1px solid #f1f3f5; display: flex; justify-content: space-between; align-items: center; }
         
         /* 検索窓のスタイル */
@@ -169,6 +175,10 @@
 
     <div class="card">
         <h2>🔍 登録済みマスタ</h2>
+        <!-- 🔗 値札を作るボタン等を追加 -->
+        <div class="master-action-buttons">
+            <a href="tags.html" target="_blank" class="btn-link-tab">🏷️ 値札を作る ↗</a>
+        </div>
         <input type="text" id="searchInput" class="search-box" placeholder="🔍 商品名またはJANで検索（全角半角カタカナ対応）" oninput="filterMasterList()">
         <div id="masterCount">登録件数：読み込み中...</div>
         <div id="masterItemsList"></div>
@@ -189,7 +199,6 @@
             document.getElementById("authOverlay").style.display = "none";
             document.getElementById("mainContent").style.display = "block";
             loadMasterData();
-            // ログイン成功時は自動でカメラを起動せず、ボタンで起動するように変更
         } else {
             document.getElementById("authError").style.display = "block";
         }
@@ -224,7 +233,6 @@
             });
     }
 
-    // 📸 高機能カメラ＆ズーム・タップフォーカス初期化処理（ボタン押下で実行）
     async function initAdvancedScanner() {
         const startBtn = document.getElementById("startCameraBtn");
         const readerDiv = document.getElementById("reader");
@@ -243,9 +251,7 @@
                     document.getElementById("manualJan").value = decodedText;
                     searchAndShow(decodedText);
                 },
-                (errorMessage) => {
-                    // スキャン中エラー（無視してOK）
-                }
+                (errorMessage) => {}
             );
 
             setTimeout(() => {
@@ -261,9 +267,7 @@
                                 await activeVideoTrack.applyConstraints({
                                     advanced: [{ focusMode: "continuous" }]
                                 });
-                            } catch (err) {
-                                console.log("Tap focus not fully supported on this device.");
-                            }
+                            } catch (err) {}
                         }
                     });
                 }
@@ -277,7 +281,6 @@
         }
     }
 
-    // カメラのズーム機能設定
     function setupCameraCapabilities(videoTrack) {
         const capabilities = videoTrack.getCapabilities();
         const zoomControlArea = document.getElementById("zoomControlArea");
@@ -293,7 +296,6 @@
         }
     }
 
-    // ズームスライダー操作時
     async function changeZoom(val) {
         if (!activeVideoTrack) return;
         const numVal = parseFloat(val);
@@ -307,7 +309,6 @@
         }
     }
 
-    // 「すべて表示」ボタンの切り替え処理
     function toggleDetails() {
         const detailFields = document.getElementById("detailFields");
         const toggleBtn = document.getElementById("toggleBtn");
@@ -320,7 +321,6 @@
         }
     }
 
-    // JANを読み取った・入力したときの処理
     function searchAndShow(jan) {
         const cleanJan = jan.trim();
         if (!cleanJan) return;
@@ -359,7 +359,6 @@
         editArea.scrollIntoView({ behavior: 'smooth' });
     }
 
-    // 個別商品の更新・新規追加をクラウドへ送信する処理
     function saveSingleItem() {
         const jan = document.getElementById("editJan").value;
         const itemName = document.getElementById("editItemName").value.trim();
@@ -429,7 +428,6 @@
         });
     }
 
-    // 全角・半角カタカナの揺らぎを吸収するためのヘルパー関数
     function normalizeText(str) {
         if (!str) return "";
         return str.toString()
@@ -448,7 +446,6 @@
             .toLowerCase();
     }
 
-    // 検索キーワードに基づいてマスタリストを絞り込んで表示する処理
     function filterMasterList() {
         const list = document.getElementById("masterItemsList");
         const countDiv = document.getElementById("masterCount");
@@ -498,7 +495,6 @@
         return match ? parseFloat(match[0]) : 0;
     }
 
-    // --- ドラッグ＆ドロップおよびファイル選択のイベント設定 ---
     const dropZone = document.getElementById("dropZone");
     const fileInput = document.getElementById("fileInput");
 
