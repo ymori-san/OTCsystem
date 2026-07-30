@@ -88,7 +88,7 @@
         <!-- カメラ描画領域 -->
         <div id="reader"></div>
 
-        <!-- 🔍 ズーム調整スライダー（カメラ起動後に自動調整されます） -->
+        <!-- 🔍 ズーム調整スライダー -->
         <div class="zoom-container" id="zoomControlArea" style="display: none;">
             <span>🔍 ズーム:</span>
             <input type="range" id="zoomRange" min="1" max="1" step="0.1" value="1" oninput="changeZoom(this.value)">
@@ -176,7 +176,7 @@
 
     let productCache = {};
     let html5QrCode = null;
-    let activeVideoTrack = null; // カメラのビデオトラック（ズーム・フォーカス制御用）
+    let activeVideoTrack = null;
 
     function checkPassword() {
         const input = document.getElementById("passwordInput").value;
@@ -184,7 +184,7 @@
             document.getElementById("authOverlay").style.display = "none";
             document.getElementById("mainContent").style.display = "block";
             loadMasterData();
-            initAdvancedScanner(); // 高機能カメラ起動
+            initAdvancedScanner();
         } else {
             document.getElementById("authError").style.display = "block";
         }
@@ -225,12 +225,10 @@
         const config = { fps: 10, qrbox: { width: 250, height: 150 } };
 
         try {
-            // 背面カメラを優先して起動
             await html5QrCode.start(
                 { facingMode: "environment" },
                 config,
                 (decodedText) => {
-                    // 読み取り成功時の処理
                     document.getElementById("manualJan").value = decodedText;
                     searchAndShow(decodedText);
                 },
@@ -239,7 +237,6 @@
                 }
             );
 
-            // 起動成功後、実際のメディアトラック（カメラ制御権）を取得
             setTimeout(() => {
                 const videoElement = document.querySelector("#reader video");
                 if (videoElement && videoElement.srcObject) {
@@ -247,11 +244,9 @@
                     activeVideoTrack = stream.getVideoTracks()[0];
                     setupCameraCapabilities(activeVideoTrack);
 
-                    // タップフォーカス機能の設定
                     videoElement.addEventListener("click", async (e) => {
                         if (activeVideoTrack && typeof activeVideoTrack.applyConstraints === "function") {
                             try {
-                                // フォーカスモードをコンティニュアスまたはマニュアルに調整
                                 await activeVideoTrack.applyConstraints({
                                     advanced: [{ focusMode: "continuous" }]
                                 });
@@ -263,12 +258,12 @@
                 }
             }, 1000);
 
-        } else (err) => {
+        } catch (err) {
             console.error("カメラ起動エラー: ", err);
         }
     }
 
-    // カメラのズーム機能（対応している端末のみバーを表示）
+    // カメラのズーム機能設定
     function setupCameraCapabilities(videoTrack) {
         const capabilities = videoTrack.getCapabilities();
         const zoomControlArea = document.getElementById("zoomControlArea");
@@ -280,7 +275,7 @@
             zoomRange.step = capabilities.zoom.step || 0.1;
             zoomRange.value = videoTrack.getSettings().zoom || capabilities.zoom.min;
             document.getElementById("zoomValue").innerText = Number(zoomRange.value).toFixed(1) + "x";
-            zoomControlArea.style.display = "flex"; // ズーム対応端末ならスライダーを表示
+            zoomControlArea.style.display = "flex";
         }
     }
 
@@ -420,7 +415,7 @@
         });
     }
 
-    // 💡 全角・半角カタカナの揺らぎを吸収するためのヘルパー関数
+    // 全角・半角カタカナの揺らぎを吸収するためのヘルパー関数
     function normalizeText(str) {
         if (!str) return "";
         return str.toString()
@@ -439,7 +434,7 @@
             .toLowerCase();
     }
 
-    // 🔍 検索キーワードに基づいてマスタリストを絞り込んで表示する処理
+    // 検索キーワードに基づいてマスタリストを絞り込んで表示する処理
     function filterMasterList() {
         const list = document.getElementById("masterItemsList");
         const countDiv = document.getElementById("masterCount");
