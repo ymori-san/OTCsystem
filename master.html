@@ -13,10 +13,10 @@
         .container { max-width: 950px; margin: 0 auto; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
         
-        /* ヘッダー・戻るボタン周り */
+        /* ヘッダー・閉じるボタン周り */
         .header-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
         h1 { border-left: 5px solid #e28743; padding-left: 10px; font-size: 20px; margin: 0; }
-        .btn-back { background-color: #6c757d; color: white; text-decoration: none; padding: 8px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; display: inline-block; width: auto; margin-top: 0; }
+        .btn-back { background-color: #6c757d; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; display: inline-block; width: auto; cursor: pointer; }
         .btn-back:hover { background-color: #5a6268; }
 
         h2 { font-size: 16px; margin: 0 0 10px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
@@ -97,7 +97,8 @@
     <div class="card">
         <div class="header-area">
             <h1>📸 カメラでJAN読み取り・個別編集</h1>
-            <a href="index.html" class="btn-back">🏠 発注管理へ戻る</a>
+            <!-- 🔗 タブを閉じるボタンに変更 -->
+            <button class="btn-back" onclick="closeWindow()">✖ このタブを閉じる</button>
         </div>
         
         <!-- カメラ起動ボタン -->
@@ -201,6 +202,15 @@
     let productCache = {};
     let html5QrCode = null;
     let activeVideoTrack = null;
+
+    // 🔗 タブ（ウィンドウ）を閉じる関数
+    function closeWindow() {
+        window.close();
+        // ブラウザのセキュリティ仕様により自動で閉じられない場合はメッセージを表示
+        setTimeout(() => {
+            alert("ブラウザのセキュリティ制限によりタブを自動で閉じられませんでした。お手数ですがこのタブを手動で閉じてください。");
+        }, 300);
+    }
 
     function checkPassword() {
         const input = document.getElementById("passwordInput").value;
