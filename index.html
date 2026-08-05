@@ -1,105 +1,25 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>発注管理システム</title>
-    <style>
-        body { font-family: sans-serif; margin: 20px; background-color: #f5f5f5; color: #333; }
-        .main-container { max-width: 650px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
-        .left-side { width: 100%; }
-        .right-side { width: 100%; display: flex; flex-direction: column; gap: 15px; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); box-sizing: border-box; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"], input[type="number"], input[type="password"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
-        button, input[type="submit"] { background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; margin-bottom: 5px; }
-        button:hover, input[type="submit"]:hover { background-color: #0056b3; }
-        .wholesaler-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-        .wholesaler-actions { flex: 1 1 calc(50% - 5px); min-width: 140px; padding: 10px; background: #e7f5ff; border-radius: 6px; border: 1px solid #a5d8ff; box-sizing: border-box; }
-        .wholesaler-title { margin: 0 0 5px 0; font-size: 13px; font-weight: bold; color: #1971c2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .btn-print { background-color: #28a745; margin: 0; padding: 8px 10px; font-size: 14px; }
-        .btn-print:hover { background-color: #218838; }
-        h2 { margin-top: 20px; border-bottom: 2px solid #007bff; padding-bottom: 5px; font-size: 18px; }
-        ul { list-style: none; padding: 0; }
-        li { background: #eee; margin-bottom: 5px; padding: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
-        .item-info { display: flex; flex-direction: column; }
-        .btn-delete { background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; width: auto; font-size: 14px; margin: 0; }
-        .btn-delete:hover { background-color: #bd2130; }
-        .log-section { background-color: #e3fafc; border: 1px solid #c5f6fa; }
-        .log-list-container { max-height: 250px; overflow-y: auto; background: white; padding: 10px; border-radius: 4px; border: 1px solid #dee2e6; }
-        .log-item { font-size: 13px; padding: 6px 0; border-bottom: 1px solid #f1f3f5; }
-        .log-item:last-child { border-bottom: none; }
-        .log-date { color: #868e96; font-size: 11px; }
-        .master-section { background-color: #fff9db; border: 1px solid #ffe3e3; }
-        .master-header-box { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #d9480f; padding-bottom: 5px; margin-top: 20px; }
-        
-        /* 🔗 ボタンを並べるエリアのスタイル */
-        .master-action-buttons { display: flex; gap: 8px; margin-top: 10px; }
-        .btn-open-tab { background-color: #e28743; color: white; text-decoration: none; padding: 8px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; text-align: center; flex: 1; display: inline-block; }
-        .btn-open-tab:hover { background-color: #cf7735; }
-        .btn-tag-tab { background-color: #20c997; }
-        .btn-tag-tab:hover { background-color: #17b886; }
+<!DOCTYPE html><html lang="ja"><head>    <meta charset="UTF-8">    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>発注管理システム</title>
+    <!-- 📄 PDF出力用のライブラリ (html2pdf.js) を読み込み -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-        .master-count { font-size: 14px; color: #666; margin: 10px 0; font-weight: bold; }
-        .search-input { width: 100%; padding: 6px 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background-color: #f8f9fa; }
-        .master-list-container { max-height: 250px; overflow-y: auto; border: 1px solid #ddd; background: white; padding: 10px; border-radius: 4px; }
-        .master-item { font-size: 14px; padding: 6px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+    <style>        body { font-family: sans-serif; margin: 20px; background-color: #f5f5f5; color: #333; }        .main-container { max-width: 650px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }        .left-side { width: 100%; }        .right-side { width: 100%; display: flex; flex-direction: column; gap: 15px; }        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); box-sizing: border-box; }        .form-group { margin-bottom: 15px; }        label { display: block; margin-bottom: 5px; font-weight: bold; }        input[type="text"], input[type="number"], input[type="password"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }        button, input[type="submit"] { background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; margin-bottom: 5px; }        button:hover, input[type="submit"]:hover { background-color: #0056b3; }        .wholesaler-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }        .wholesaler-actions { flex: 1 1 calc(50% - 5px); min-width: 140px; padding: 10px; background: #e7f5ff; border-radius: 6px; border: 1px solid #a5d8ff; box-sizing: border-box; }        .wholesaler-title { margin: 0 0 5px 0; font-size: 13px; font-weight: bold; color: #1971c2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }        .btn-print { background-color: #28a745; margin: 0; padding: 8px 10px; font-size: 14px; }        .btn-print:hover { background-color: #218838; }        h2 { margin-top: 20px; border-bottom: 2px solid #007bff; padding-bottom: 5px; font-size: 18px; }        ul { list-style: none; padding: 0; }        li { background: #eee; margin-bottom: 5px; padding: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }        .item-info { display: flex; flex-direction: column; }        .btn-delete { background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; width: auto; font-size: 14px; margin: 0; }        .btn-delete:hover { background-color: #bd2130; }        .log-section { background-color: #e3fafc; border: 1px solid #c5f6fa; }        .log-list-container { max-height: 250px; overflow-y: auto; background: white; padding: 10px; border-radius: 4px; border: 1px solid #dee2e6; }        .log-item { font-size: 13px; padding: 6px 0; border-bottom: 1px solid #f1f3f5; }        .log-item:last-child { border-bottom: none; }        .log-date { color: #868e96; font-size: 11px; }        .master-section { background-color: #fff9db; border: 1px solid #ffe3e3; }        .master-header-box { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #d9480f; padding-bottom: 5px; margin-top: 20px; }                /* 🔗 ボタンを並べるエリアのスタイル */        .master-action-buttons { display: flex; gap: 8px; margin-top: 10px; }        .btn-open-tab { background-color: #e28743; color: white; text-decoration: none; padding: 8px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; text-align: center; flex: 1; display: inline-block; }        .btn-open-tab:hover { background-color: #cf7735; }        .btn-tag-tab { background-color: #20c997; }        .btn-tag-tab:hover { background-color: #17b886; }        
+        /* 📖 マニュアルPDFダウンロードボタンのスタイル */        .btn-pdf-manual { background-color: #7950f8; margin-top: 10px; }        .btn-pdf-manual:hover { background-color: #6741d9; }
 
-        /* 🔒 ログイン画面（オーバーレイ）のスタイル */
-        #authOverlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-        .auth-card {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 350px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            text-align: center;
-        }
-        .auth-card h2 {
-            margin-top: 0;
-            color: #333;
-            border-bottom: none;
-        }
-        #authError {
-            color: #dc3545;
-            font-size: 14px;
-            margin-top: 10px;
-            display: none;
-        }
+        .master-count { font-size: 14px; color: #666; margin: 10px 0; font-weight: bold; }        .search-input { width: 100%; padding: 6px 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background-color: #f8f9fa; }        .master-list-container { max-height: 250px; overflow-y: auto; border: 1px solid #ddd; background: white; padding: 10px; border-radius: 4px; }        .master-item { font-size: 14px; padding: 6px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
 
-        @media screen and (min-width: 1024px) {
-            .main-container { max-width: 1250px; flex-direction: row; gap: 25px; }
-            .left-side { flex: 1.3; position: sticky; top: 20px; }
-            .right-side { flex: 0.7; }
-            .master-list-container { max-height: 400px; }
-        }
+        /* 🔒 ログイン画面（オーバーレイ）のスタイル */        #authOverlay {            position: fixed;            top: 0;            left: 0;            width: 100%;            height: 100%;            background: rgba(0, 0, 0, 0.85);            display: flex;            justify-content: center;            align-items: center;            z-index: 9999;        }
+        .auth-card {            background: white;            padding: 30px;            border-radius: 8px;            width: 90%;            max-width: 350px;            box-shadow: 0 4px 15px rgba(0,0,0,0.3);            text-align: center;        }
+        .auth-card h2 {            margin-top: 0;            color: #333;            border-bottom: none;        }
+        #authError {            color: #dc3545;            font-size: 14px;            margin-top: 10px;            display: none;        }
+
+        @media screen and (min-width: 1024px) {            .main-container { max-width: 1250px; flex-direction: row; gap: 25px; }            .left-side { flex: 1.3; position: sticky; top: 20px; }            .right-side { flex: 0.7; }            .master-list-container { max-height: 400px; }        }
         #printArea { display: none; }
-        @media print {
-            body { background: white; color: black; margin: 0; padding: 0; }
-            .main-container { display: none; }
-            #printArea { display: block; padding: 20px; }
-            .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            .print-table th, .print-table td { border: 1px solid #000; padding: 8px; text-align: left; }
-            .print-header { text-align: center; margin-bottom: 30px; }
-        }
-    </style>
-</head>
-<body>
 
-    <!-- 🔒 パスワードログイン画面（初期状態では表示） -->
+        /* 🖨️ PDF出力用マニュアルの見た目（普段は画面から隠しておく） */        #manualContent { display: none; }
+
+        @media print {            body { background: white; color: black; margin: 0; padding: 0; }            .main-container { display: none; }            #printArea { display: block; padding: 20px; }            .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; }            .print-table th, .print-table td { border: 1px solid #000; padding: 8px; text-align: left; }            .print-header { text-align: center; margin-bottom: 30px; }        }    </style></head><body>
+
+    <!-- 🔒 パスワードログイン画面 -->
     <div id="authOverlay">
         <div class="auth-card">
             <h2>発注管理システム</h2>
@@ -137,14 +57,17 @@
                     </div>
                     <input type="submit" value="発注カゴに追加">
                 </form>
+
                 <h2>現在の発注待ちリスト</h2>
                 <ul id="orderList"></ul>
+
                 <div id="printSection" style="display:none;">
                     <h2>発注内容の印刷</h2>
                     <div class="wholesaler-grid" id="printButtons"></div>
                 </div>
             </div>
         </div>
+
         <div class="right-side">
             <div class="card log-section">
                 <h2>最近の発注</h2>
@@ -154,316 +77,334 @@
                 <div class="master-header-box">
                     <h2>登録済み商品</h2>
                 </div>
-                <!-- 🔗 ボタン群を追加 -->
                 <div class="master-action-buttons">
                     <a href="master.html" target="_blank" class="btn-open-tab">商品情報一覧・登録 ↗</a>
                     <a href="tags.html" target="_blank" class="btn-open-tab btn-tag-tab">値札を作る ↗</a>
                 </div>
+
+                <!-- 📖 マニュアルPDFダウンロードボタン -->
+                <button class="btn-pdf-manual" onclick="downloadManualPDF()">📖 操作マニュアルをPDFで保存</button>
+
                 <div id="masterCount" class="master-count">登録件数：0 件</div>
                 <input type="text" id="masterSearchInput" class="search-input" placeholder="🔍 検索..." oninput="filterMasterList()">
                 <div class="master-list-container" id="masterItemsList"></div>
             </div>
         </div>
     </div>
+
     <div id="printArea"></div>
 
-    <script>
-        let currentPrintingWholesaler = null;
+    <!-- 📄 PDF化するためのマニュアル原稿（非表示） -->
+    <div id="manualContent" style="padding: 20px; font-family: sans-serif; color: #333; background: white; width: 210mm; box-sizing: border-box;">
+        <h1 style="text-align: center; color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 10px; font-size: 22px;">発注管理システム かんたん操作マニュアル</h1>
+        <p style="font-size: 12px; color: #666; text-align: right;">対象者：全スタッフ（保存用）</p>
         
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxavToYkOGbRJE25AGUMHLoQKx5XHfowr-oTxXC9eN-P6dNQdD4xabTi510HUshWMmjZA/exec"; 
+        <h3 style="background: #e7f5ff; padding: 6px 10px; color: #1971c2; font-size: 15px; border-left: 4px solid #1971c2; margin-top: 15px;">1. ログインする</h3>
+        <ol style="font-size: 13px; line-height: 1.6; margin: 5px 0 15px 20px;">
+            <li>画面を開くとパスワード入力画面が出ます。</li>
+            <li>指定されたパスワードを入力し、<b>【ログイン】</b>を押します。</li>
+        </ol>
 
+        <h3 style="background: #e7f5ff; padding: 6px 10px; color: #1971c2; font-size: 15px; border-left: 4px solid #1971c2; margin-top: 15px;">2. 商品を注文カゴに入れる（発注登録）</h3>
+        <ol style="font-size: 13px; line-height: 1.6; margin: 5px 0 15px 20px;">
+            <li>左側の「発注登録」で<b>商品名</b>を入力します（候補が出たらクリックすると便利）。</li>
+            <li><b>発注先</b>を選びます（自動で入ることもあります）。</li>
+            <li><b>発注数量</b>を入力します。</li>
+            <li><b>【発注カゴに追加】</b>を押すと、下の「発注待ちリスト」にたまります。</li>
+        </ol>
+
+        <h3 style="background: #e7f5ff; padding: 6px 10px; color: #1971c2; font-size: 15px; border-left: 4px solid #1971c2; margin-top: 15px;">3. 間違えて登録したときは？</h3>
+        <ul style="font-size: 13px; line-height: 1.6; margin: 5px 0 15px 20px; list-style-type: disc;">
+            <li>リストの右側にある<b>【削除】</b>ボタンを押すと、カゴから消すことができます。</li>
+        </ul>
+
+        <h3 style="background: #e7f5ff; padding: 6px 10px; color: #1971c2; font-size: 15px; border-left: 4px solid #1971c2; margin-top: 15px;">4. 注文書を印刷する（発注する）</h3>
+        <ol style="font-size: 13px; line-height: 1.6; margin: 5px 0 15px 20px;">
+            <li>カゴにためると、下に発注先ごとの緑色の<b>【印刷する】</b>ボタンが出ます。</li>
+            <li>ボタンを押して印刷します（※信公は2万円未満で警告が出ます）。</li>
+            <li>印刷後に「〇〇への発注を完了しましたか？」と出ます。
+                <br>・<b>「OK」</b>を押すとリストから消え、履歴に移ります（注文完了）。
+                <br>・<b>「キャンセル」</b>を押すと消えずに残ります。</li>
+        </ol>
+
+        <h3 style="background: #e7f5ff; padding: 6px 10px; color: #1971c2; font-size: 15px; border-left: 4px solid #1971c2; margin-top: 15px;">5. 過去の履歴や商品を見る</h3>
+        <ul style="font-size: 13px; line-height: 1.6; margin: 5px 0 15px 20px; list-style-type: disc;">
+            <li><b>最近の発注：</b>過去に注文した履歴を確認できます。</li>
+            <li><b>商品情報一覧・値札を作る：</b>ボタンから別タブで詳細や値札を作成できます。</li>
+        </ul>
+    </div>
+
+    <script>
+        let currentPrintingWholesaler = null;                
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxavToYkOGbRJE25AGUMHLoQKx5XHfowr-oTxXC9eN-P6dNQdD4xabTi510HUshWMmjZA/exec"; 
         const STORAGE_KEY_PRODUCTS = "hatchu_products";
         const STORAGE_KEY_ORDERS = "Hatchu_Orders";
         const STORAGE_KEY_LOGS = "Hatchu_Logs";
         const STORAGE_KEY_AUTH = "hatchu_auth_passed";
 
-        window.addEventListener("DOMContentLoaded", () => {
-            if (sessionStorage.getItem(STORAGE_KEY_AUTH) === "true") {
-                unlockSystem();
-            }
+        window.addEventListener("DOMContentLoaded", () => {            
+            if (sessionStorage.getItem(STORAGE_KEY_AUTH) === "true") {                
+                unlockSystem();            
+            }        
         });
 
-        function checkPassword(event) {
-            event.preventDefault();
-            const inputVal = document.getElementById("passwordInput").value;
+        function checkPassword(event) {            
+            event.preventDefault();            
+            const inputVal = document.getElementById("passwordInput").value;            
             const errorMsg = document.getElementById("authError");
 
-            if (inputVal === "Okenko.otc") {
-                sessionStorage.setItem(STORAGE_KEY_AUTH, "true");
-                unlockSystem();
-            } else {
-                errorMsg.style.display = "block";
-                document.getElementById("passwordInput").value = "";
+            if (inputVal === "Okenko.otc") {                
+                sessionStorage.setItem(STORAGE_KEY_AUTH, "true");                
+                unlockSystem();            
+            } else {                
+                errorMsg.style.display = "block";                
+                document.getElementById("passwordInput").value = "";            }        
+        }
+
+        function unlockSystem() {            
+            document.getElementById("authOverlay").style.display = "none";            
+            initStorageData();            
+            fetchMasterFromCloud();        
+        }
+
+        function fetchMasterFromCloud() {            
+            if (!GAS_API_URL || GAS_API_URL.includes("ここにGASのウェブアプリURL")) {                
+                renderSystem();                
+                return;            
             }
+
+            fetch(GAS_API_URL)                
+                .then(res => res.json())                
+                .then(data => {                    
+                    if (data.status === "success" && data.items && data.items.length > 0) {                        
+                        localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(data.items));                    
+                    }                    
+                    renderSystem();                
+                })                
+                .catch(err => {                    
+                    console.error("クラウドからのデータ取得に失敗しました", err);                    
+                    renderSystem();                
+                });        
         }
 
-        function unlockSystem() {
-            document.getElementById("authOverlay").style.display = "none";
-            initStorageData();
-            fetchMasterFromCloud();
-        }
+        function renderSystem() {            
+            displayData();            
+            updateMasterSuggestList();            
+            displayLogs();        }
 
-        function fetchMasterFromCloud() {
-            if (!GAS_API_URL || GAS_API_URL.includes("ここにGASのウェブアプリURL")) {
-                renderSystem();
-                return;
+        function initStorageData() {            
+            if (!localStorage.getItem(STORAGE_KEY_PRODUCTS)) {                
+                localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify([                    
+                    { jan: "1111111111111", itemName: "ソフトサンティア", wholesaler: "ダイコー", costPrice: 500, sellingPrice: 800 },                    
+                    { jan: "2222222222222", itemName: "ロートVロート", wholesaler: "信公", costPrice: 1200, sellingPrice: 1500 }                ]));            }
+            if (!localStorage.getItem(STORAGE_KEY_ORDERS)) {                
+                localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify([]));            
             }
-
-            fetch(GAS_API_URL)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === "success" && data.items && data.items.length > 0) {
-                        localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(data.items));
-                    }
-                    renderSystem();
-                })
-                .catch(err => {
-                    console.error("クラウドからのデータ取得に失敗しました", err);
-                    renderSystem();
-                });
+            if (!localStorage.getItem(STORAGE_KEY_LOGS)) {                
+                localStorage.setItem(STORAGE_KEY_LOGS, JSON.stringify([]));            
+            }        
         }
 
-        function renderSystem() {
-            displayData();
-            updateMasterSuggestList();
-            displayLogs();
+        function getProducts() {            
+            try { return JSON.parse(localStorage.getItem(STORAGE_KEY_PRODUCTS)) || []; } catch(e) { return []; }        
         }
 
-        function initStorageData() {
-            if (!localStorage.getItem(STORAGE_KEY_PRODUCTS)) {
-                localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify([
-                    { jan: "1111111111111", itemName: "ソフトサンティア", wholesaler: "ダイコー", costPrice: 500, sellingPrice: 800 },
-                    { jan: "2222222222222", itemName: "ロートVロート", wholesaler: "信公", costPrice: 1200, sellingPrice: 1500 }
-                ]));
-            }
-            if (!localStorage.getItem(STORAGE_KEY_ORDERS)) {
-                localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify([]));
-            }
-            if (!localStorage.getItem(STORAGE_KEY_LOGS)) {
-                localStorage.setItem(STORAGE_KEY_LOGS, JSON.stringify([]));
-            }
+        function getOrders() {            
+            try { return JSON.parse(localStorage.getItem(STORAGE_KEY_ORDERS)) || []; } catch(e) { return []; }        
         }
 
-        function getProducts() {
-            try {
-                return JSON.parse(localStorage.getItem(STORAGE_KEY_PRODUCTS)) || [];
-            } catch(e) { return []; }
+        function saveOrders(orders) {            
+            localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(orders));        
         }
 
-        function getOrders() {
-            try {
-                return JSON.parse(localStorage.getItem(STORAGE_KEY_ORDERS)) || [];
-            } catch(e) { return []; }
+        function getLogs() {            
+            try { return JSON.parse(localStorage.getItem(STORAGE_KEY_LOGS)) || []; } catch(e) { return []; }        
         }
 
-        function saveOrders(orders) {
-            localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(orders));
+        function saveLogs(logs) {            
+            localStorage.setItem(STORAGE_KEY_LOGS, JSON.stringify(logs));        
         }
 
-        function getLogs() {
-            try {
-                return JSON.parse(localStorage.getItem(STORAGE_KEY_LOGS)) || [];
-            } catch(e) { return []; }
+        function translateHanToZen(str) {            
+            if (!str) return "";            
+            const kanaMap = {'ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ','ｶ':'カ','ｷ':'キ','ｸ':'ク','ｹ':'ケ','ｺ':'コ','ｻ':'サ','ｼ':'シ','ｽ':'ス','ｾ':'セ','ｿ':'ソ','ﾀ':'タ','ﾁ':'チ','ﾂ':'ツ','ﾃ':'テ','ﾄ':'ト','ﾅ':'ナ','ﾆ':'ニ','ﾇ':'ヌ','ﾈ':'ネ','ﾉ':'ノ','ﾊ':'ハ','ﾋ':'ヒ','ﾌ':'フ','ﾍ':'ヘ','ﾎ':'ホ','ﾏ':'マ','ﾐ':'ミ','ﾑ':'ム','ﾒ':'メ','ﾓ':'モ','ﾔ':'ヤ','ﾕ':'ユ','ﾖ':'ヨ','ﾗ':'ラ','ﾘ':'リ','ﾙ':'ル','ﾚ':'レ','ﾛ':'ロ','ﾜ':'ワ','ｦ':'ヲ','ﾝ':'ン','ｧ':'ァ','ｨ':'ィ','ｩ':'ゥ','ｪ':'ェ','ｫ':'ォ','ｬ':'ャ','ｭ':'ュ','ｮ':'ョ','ｯ':'ッ','ｰ':'ー','ﾞ':'゛','ﾟ':'゜'};            
+            return str.replace(/[ｱ-ﾝｧ-ｫｬ-ｮｯｰﾞﾟ]/g, s => kanaMap[s] || s);        
         }
 
-        function saveLogs(logs) {
-            localStorage.setItem(STORAGE_KEY_LOGS, JSON.stringify(logs));
+        function updateMasterSuggestList() {            
+            const datalist = document.getElementById("masterList");            
+            const itemsListDiv = document.getElementById("masterItemsList");            
+            datalist.innerHTML = "";            
+            itemsListDiv.innerHTML = "";                        
+            let keyword = translateHanToZen(document.getElementById("masterSearchInput").value.trim()).toLowerCase();            
+            let products = getProducts();                        
+            let count = 0;            
+            products.forEach(p => {                
+                const name = (p.itemName || "").trim();                
+                if (!name) return;                                
+                datalist.innerHTML += `<option value="${name}">`;                
+                if (keyword === "" || translateHanToZen(name).toLowerCase().includes(keyword)) {                    
+                    let sellingPriceText = (p.sellingPrice !== undefined && p.sellingPrice !== "") ? Number(p.sellingPrice).toLocaleString() + "円" : "売価未設定";                                        
+                    itemsListDiv.innerHTML += `                        
+                        <div class="master-item">                            
+                            <div><strong>${name}</strong> <span style="color:#666; font-size:12px;">(${p.wholesaler || '未設定'})</span></div>                            
+                            <div style="color:#d9480f; font-weight:bold; font-size:13px;">${sellingPriceText}</div>                        
+                        </div>`;                    
+                    count++;                
+                }            
+            });            
+            document.getElementById("masterCount").innerText = "登録件数：" + count + " 件";        
         }
 
-        function translateHanToZen(str) {
-            if (!str) return "";
-            const kanaMap = {'ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ','ｶ':'カ','ｷ':'キ','ｸ':'ク','ｹ':'ケ','ｺ':'コ','ｻ':'サ','ｼ':'シ','ｽ':'ス','ｾ':'セ','ｿ':'ソ','ﾀ':'タ','ﾁ':'チ','ﾂ':'ツ','ﾃ':'テ','ﾄ':'ト','ﾅ':'ナ','ﾆ':'ニ','ﾇ':'ヌ','ﾈ':'ネ','ﾉ':'ノ','ﾊ':'ハ','ﾋ':'ヒ','ﾌ':'フ','ﾍ':'ヘ','ﾎ':'ホ','ﾏ':'マ','ﾐ':'ミ','ﾑ':'ム','ﾒ':'メ','ﾓ':'モ','ﾔ':'ヤ','ﾕ':'ユ','ﾖ':'ヨ','ﾗ':'ラ','ﾘ':'リ','ﾙ':'ル','ﾚ':'レ','ﾛ':'ロ','ﾜ':'ワ','ｦ':'ヲ','ﾝ':'ン','ｧ':'ァ','ｨ':'ィ','ｩ':'ゥ','ｪ':'ェ','ｫ':'ォ','ｬ':'ャ','ｭ':'ュ','ｮ':'ョ','ｯ':'ッ','ｰ':'ー','ﾞ':'゛','ﾟ':'゜'};
-            return str.replace(/[ｱ-ﾝｧ-ｫｬ-ｮｯｰﾞﾟ]/g, s => kanaMap[s] || s);
+        function autoFill() {            
+            let name = document.getElementById("itemName").value.trim();            
+            if (!name) return;            
+            let products = getProducts();            
+            let found = products.find(p => (p.itemName || "").trim() === name);            
+            if (found) {                
+                document.getElementById("itemWholesaler").value = found.wholesaler || "";            
+            }        
         }
 
-        function updateMasterSuggestList() {
-            const datalist = document.getElementById("masterList");
-            const itemsListDiv = document.getElementById("masterItemsList");
-            datalist.innerHTML = "";
-            itemsListDiv.innerHTML = "";
-            
-            let keyword = translateHanToZen(document.getElementById("masterSearchInput").value.trim()).toLowerCase();
-            let products = getProducts();
-            
-            let count = 0;
-            products.forEach(p => {
-                const name = (p.itemName || "").trim();
-                if (!name) return;
-                
-                datalist.innerHTML += `<option value="${name}">`;
-                if (keyword === "" || translateHanToZen(name).toLowerCase().includes(keyword)) {
-                    let sellingPriceText = (p.sellingPrice !== undefined && p.sellingPrice !== "") ? Number(p.sellingPrice).toLocaleString() + "円" : "売価未設定";
-                    
-                    itemsListDiv.innerHTML += `
-                        <div class="master-item">
-                            <div><strong>${name}</strong> <span style="color:#666; font-size:12px;">(${p.wholesaler || '未設定'})</span></div>
-                            <div style="color:#d9480f; font-weight:bold; font-size:13px;">${sellingPriceText}</div>
-                        </div>`;
-                    count++;
-                }
-            });
-            document.getElementById("masterCount").innerText = "登録件数：" + count + " 件";
-        }
-
-        function autoFill() {
-            let name = document.getElementById("itemName").value.trim();
-            if (!name) return;
-            let products = getProducts();
-            let found = products.find(p => (p.itemName || "").trim() === name);
-            if (found) {
-                document.getElementById("itemWholesaler").value = found.wholesaler || "";
-            }
-        }
-
-        function updatePrintButtons() {
-            const container = document.getElementById("printButtons");
-            const section = document.getElementById("printSection");
-            let orders = getOrders();
-            let wholesalers = new Set();
-            
-            orders.forEach(o => {
-                if (o.wholesaler) wholesalers.add(o.wholesaler);
+        function updatePrintButtons() {            
+            const container = document.getElementById("printButtons");            
+            const section = document.getElementById("printSection");            
+            let orders = getOrders();            
+            let wholesalers = new Set();                        
+            orders.forEach(o => {                
+                if (o.wholesaler) wholesalers.add(o.wholesaler);            
             });
 
-            container.innerHTML = "";
-            if (wholesalers.size > 0) {
-                section.style.display = "block";
-                Array.from(wholesalers).sort().forEach(w => {
-                    container.innerHTML += `<div class="wholesaler-actions"><p class="wholesaler-title">◆ ${w}</p><button class="btn-print" onclick="printOrder('${w}')">印刷する</button></div>`;
-                });
-            } else {
-                section.style.display = "none";
-            }
+            container.innerHTML = "";            
+            if (wholesalers.size > 0) {                
+                section.style.display = "block";                
+                Array.from(wholesalers).sort().forEach(w => {                    
+                    container.innerHTML += `<div class="wholesaler-actions"><p class="wholesaler-title">◆ ${w}</p><button class="btn-print" onclick="printOrder('${w}')">印刷する</button></div>`;                });            
+            } else {                
+                section.style.display = "none";            }        
         }
 
-        function saveData(event) {
-            event.preventDefault();
-            const name = document.getElementById("itemName").value.trim();
-            const wholesaler = document.getElementById("itemWholesaler").value.trim();
-            const qty = parseInt(document.getElementById("itemQty").value) || 1;
-            
+        function saveData(event) {            
+            event.preventDefault();            
+            const name = document.getElementById("itemName").value.trim();            
+            const wholesaler = document.getElementById("itemWholesaler").value.trim();            
+            const qty = parseInt(document.getElementById("itemQty").value) || 1;                        
             if (!name || !wholesaler) return;
 
-            let orders = getOrders();
-            const newOrder = {
-                id: Date.now() + Math.random(),
-                itemName: name,
-                wholesaler: wholesaler,
-                quantity: qty,
-                date: new Date().toLocaleDateString()
-            };
+            let orders = getOrders();            
+            const newOrder = {                
+                id: Date.now() + Math.random(),                
+                itemName: name,                
+                wholesaler: wholesaler,                
+                quantity: qty,                
+                date: new Date().toLocaleDateString()            };
 
-            orders.push(newOrder);
+            orders.push(newOrder);            
             saveOrders(orders);
 
-            document.getElementById("itemName").value = "";
-            document.getElementById("itemQty").value = "1";
-            document.getElementById("itemWholesaler").value = "";
-            displayData();
-        }
+            document.getElementById("itemName").value = "";            
+            document.getElementById("itemQty").value = "1";            
+            document.getElementById("itemWholesaler").value = "";            
+            displayData();        }
 
-        function displayData() {
-            const orderList = document.getElementById("orderList");
-            orderList.innerHTML = "";
+        function displayData() {            
+            const orderList = document.getElementById("orderList");            
+            orderList.innerHTML = "";            
             let orders = getOrders();
 
-            if (orders.length === 0) {
-                orderList.innerHTML = "<li style='justify-content: center; color: #666;'>発注待ちの商品はありません</li>";
-            } else {
-                orders.forEach(c => {
-                    orderList.innerHTML += `<li><div class="item-info"><span>【${c.wholesaler}】 <strong>${c.itemName}</strong> × ${c.quantity}個</span></div><button class="btn-delete" onclick="deleteData(${c.id})">削除</button></li>`;
-                });
-            }
-            updatePrintButtons();
-        }
+            if (orders.length === 0) {                
+                orderList.innerHTML = "<li style='justify-content: center; color: #666;'>発注待ちの商品はありません</li>";            } else {                
+                orders.forEach(c => {                    
+                    orderList.innerHTML += `<li><div class="item-info"><span>【${c.wholesaler}】 <strong>${c.itemName}</strong> × ${c.quantity}個</span></div><button class="btn-delete" onclick="deleteData(${c.id})">削除</button></li>`;                });            
+            }            
+            updatePrintButtons();        }
 
-        function deleteData(id) {
-            let orders = getOrders();
-            orders = orders.filter(o => o.id !== id);
-            saveOrders(orders);
-            displayData();
-        }
+        function deleteData(id) {            
+            let orders = getOrders();            
+            orders = orders.filter(o => o.id !== id);            
+            saveOrders(orders);            
+            displayData();        }
 
-        function printOrder(w) {
-            currentPrintingWholesaler = w;
-            const printArea = document.getElementById("printArea");
-            let orders = getOrders();
+        function printOrder(w) {            
+            currentPrintingWholesaler = w;            
+            const printArea = document.getElementById("printArea");            
+            let orders = getOrders();            
             let products = getProducts();
 
-            let targetOrders = orders.filter(o => o.wholesaler === w);
-            let total = 0;
+            let targetOrders = orders.filter(o => o.wholesaler === w);            
+            let total = 0;            
             let orderRows = "";
 
-            targetOrders.forEach(item => {
-                let prod = products.find(p => (p.itemName || "").trim() === item.itemName);
-                let cost = prod && prod.costPrice ? Number(prod.costPrice) : 0;
-                let subtotal = cost * item.quantity;
+            targetOrders.forEach(item => {                
+                let prod = products.find(p => (p.itemName || "").trim() === item.itemName);                
+                let cost = prod && prod.costPrice ? Number(prod.costPrice) : 0;                
+                let subtotal = cost * item.quantity;                
                 total += subtotal;
 
-                if (w === '信公') {
-                    orderRows += `<tr><td>${item.itemName}</td><td>${item.quantity}</td><td>${cost.toLocaleString()}円</td><td>${subtotal.toLocaleString()}円</td></tr>`;
-                } else {
-                    orderRows += `<tr><td>${item.itemName}</td><td>${item.quantity}</td></tr>`;
-                }
-            });
+                if (w === '信公') {                    
+                    orderRows += `<tr><td>${item.itemName}</td><td>${item.quantity}</td><td>${cost.toLocaleString()}円</td><td>${subtotal.toLocaleString()}円</td></tr>`;                } else {                    
+                    orderRows += `<tr><td>${item.itemName}</td><td>${item.quantity}</td></tr>`;                }            });
 
-            if (w === '信公' && total < 20000) {
-                alert("警告：信公への発注合計金額が20,000円に達していません！（現在: " + total.toLocaleString() + "円）");
-            }
+            if (w === '信公' && total < 20000) {                
+                alert("警告：信公への発注合計金額が20,000円に達していません！（現在: " + total.toLocaleString() + "円）");            }
 
-            let html = `<div class="print-header"><h1>発注依頼書（${w} 御中）</h1></div><table class="print-table"><thead><tr><th>商品名</th><th>数量</th>${w === '信公' ? '<th>単価(仕入)</th><th>小計</th>' : ''}</tr></thead><tbody>${orderRows}</tbody>`;
-            if (w === '信公') html += `<tfoot><tr><td colspan="3" style="text-align:right; font-weight:bold;">合計金額</td><td style="font-weight:bold;">${total.toLocaleString()}円</td></tr></tfoot>`;
+            let html = `<div class="print-header"><h1>発注依頼書（${w} 御中）</h1></div><table class="print-table"><thead><tr><th>商品名</th><th>数量</th>${w === '信公' ? '<th>単価(仕入)</th><th>小計</th>' : ''}</tr></thead><tbody>${orderRows}</tbody>`;            
+            if (w === '信公') html += `<tfoot><tr><td colspan="3" style="text-align:right; font-weight:bold;">合計金額</td><td style="font-weight:bold;">${total.toLocaleString()}円</td></tr></tfoot>`;                        
             
-            printArea.innerHTML = html + `</table>`;
-            window.print();
-            printArea.innerHTML = "";
-        }
+            printArea.innerHTML = html + `</table>`;            
+            window.print();            
+            printArea.innerHTML = "";        }
 
-        window.onafterprint = () => {
-            if (!currentPrintingWholesaler) return;
-            if (confirm(currentPrintingWholesaler + " への発注を完了しましたか？")) {
-                let orders = getOrders();
-                let logs = getLogs();
+        window.onafterprint = () => {            
+            if (!currentPrintingWholesaler) return;            
+            if (confirm(currentPrintingWholesaler + " への発注を完了しましたか？")) {                
+                let orders = getOrders();                
+                let logs = getLogs();                
                 let timestamp = new Date().toLocaleString();
 
-                let remainingOrders = [];
-                orders.forEach(o => {
-                    if (o.wholesaler === currentPrintingWholesaler) {
-                        logs.unshift({...o, timestamp: timestamp});
-                    } else {
-                        remainingOrders.push(o);
-                    }
-                });
+                let remainingOrders = [];                
+                orders.forEach(o => {                    
+                    if (o.wholesaler === currentPrintingWholesaler) {                        
+                        logs.unshift({...o, timestamp: timestamp});                    } else {                        
+                        remainingOrders.push(o);                    }                });
 
-                saveOrders(remainingOrders);
+                saveOrders(remainingOrders);                
                 saveLogs(logs);
 
-                currentPrintingWholesaler = null;
-                displayData();
-                displayLogs();
-            } else {
-                currentPrintingWholesaler = null;
-            }
-        };
+                currentPrintingWholesaler = null;                
+                displayData();                
+                displayLogs();            } else {                
+                currentPrintingWholesaler = null;            }        };
 
-        function displayLogs() {
-            const list = document.getElementById("logItemsList");
-            list.innerHTML = "";
+        function displayLogs() {            
+            const list = document.getElementById("logItemsList");            
+            list.innerHTML = "";            
             let logs = getLogs();
 
-            if (logs.length === 0) {
-                list.innerHTML = "<div class='log-item' style='text-align:center; color:#666;'>履歴はありません</div>";
-                return;
-            }
+            if (logs.length === 0) {                
+                list.innerHTML = "<div class='log-item' style='text-align:center; color:#666;'>履歴はありません</div>";                return;            }
 
-            logs.forEach(c => {
-                list.innerHTML += `<div class="log-item"><span class="log-date">[${c.timestamp}]</span><br>【${c.wholesaler}】 <strong>${c.itemName}</strong> × ${c.quantity}個</div>`;
+            logs.forEach(c => {                
+                list.innerHTML += `<div class="log-item"><span class="log-date">[${c.timestamp}]</span><br>【${c.wholesaler}】 <strong>${c.itemName}</strong> × ${c.quantity}個</div>`;            });        }
+
+        function filterMasterList() {            
+            updateMasterSuggestList();        }
+
+        // 📖 マニュアルをPDFとして自動ダウンロードする関数
+        function downloadManualPDF() {
+            const element = document.getElementById("manualContent");
+            element.style.display = "block"; // 一時的に表示してPDF化
+            
+            const opt = {
+                margin:       10,
+                filename:     '発注管理システム_操作マニュアル.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().from(element).set(opt).save().then(() => {
+                element.style.display = "none"; // 終わったら非表示に戻す
             });
         }
-
-        function filterMasterList() {
-            updateMasterSuggestList();
-        }
-    </script>
-</body>
-</html>
+    </script></body></html>
