@@ -7,19 +7,13 @@
     <style>
         body { font-family: sans-serif; margin: 20px; background: #f0f0f0; }
         .no-print { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        
         #loadingMsg { font-weight: bold; color: #007bff; font-size: 14px; animation: blink 1s infinite; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
-
         .tag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 204mm; max-width: 100%; box-sizing: border-box; }
-        
         .tag { border: 1px solid #000; background: white; padding: 0; height: 160px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; overflow: hidden; position: relative; width: 100%; }
-        
         .upper-section { background-color: #28a745; padding: 10px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; flex-grow: 1; width: 100%; box-sizing: border-box; position: relative; }
-        
         .upper-section.tax-blue,
         .upper-section.category-blue { background-color: #31869B; }
-        
         .category-badge {
             position: absolute;
             top: 4px;
@@ -34,7 +28,6 @@
             z-index: 10;
             box-sizing: border-box;
         }
-
         .name { 
             font-weight: bold; 
             font-size: 15px; 
@@ -49,7 +42,6 @@
             -webkit-box-orient: vertical; 
             box-sizing: border-box;
         }
-        
         .desc-container {
             width: 100%;
             margin-top: 6px;
@@ -57,14 +49,12 @@
             flex-direction: column;
             align-items: center;
         }
-
         .desc-divider {
             width: 90%;
             height: 1px;
             background-color: #ffffff;
             margin: 0 auto 5px auto;
         }
-
         .desc { 
             font-size: 11px; 
             color: #f0f0f0; 
@@ -77,24 +67,17 @@
             width: 100%;
             box-sizing: border-box;
         }
-        
         .lower-section { background: white; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; height: 55px; border-top: 1px solid #000; box-sizing: border-box; }
-        
         .barcode-area { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 55%; }
         .barcode { width: 100%; height: 24px; }
-        
         .price-box { color: red; font-weight: bold; font-size: 24px; line-height: 1; text-align: right; }
-        
         .color-bar { width: 100%; height: 6px; }
-        
         .tag.wholesaler-daiko .color-bar { background-color: #ff69b4; }
         .tag.wholesaler-toho .color-bar { background-color: #ffa500; }
         .tag.wholesaler-shinko .color-bar { background-color: #28a745; }
         .tag.wholesaler-other .color-bar { background-color: #6c757d; }
-        
         .delete-btn { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 15; }
         .delete-btn:hover { background: rgba(0,0,0,0.8); }
-
         @media print {
             .no-print { display: none; }
             body { background: white; margin: 0; }
@@ -117,12 +100,11 @@
         
         <span id="loadingMsg">🔄データベース反映中...</span>
     </div>
-    
+
     <div class="tag-grid" id="tagContainer"></div>
 
     <script>
         let productsCache = [];
-
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxavToYkOGbRJE25AGUMHLoQKx5XHfowr-oTxXC9eN-P6dNQdD4xabTi510HUshWMmjZA/exec"; 
         const STORAGE_KEY_PRODUCTS = "hatchu_products";
 
@@ -134,12 +116,15 @@
             const loadingMsg = document.getElementById("loadingMsg");
             if (loadingMsg) loadingMsg.style.display = "inline";
 
-            if (!GAS_API_URL || GAS_API_URL.includes("https://script.google.com/macros/s/AKfycbxavToYkOGbRJE25AGUMHLoQKx5XHfowr-oTxXC9eN-P6dNQdD4xabTi510HUshWMmjZA/exec")) {
+            if (!GAS_API_URL || GAS_API_URL.includes("https://script.google.com/macros/s/AKfycbxavToYkOGbRJE25AGUMHLoQKx5XHfowr-oTxXC9eN-P6dNQdD4xabTi510HUshWMmjZA/exec") === false && GAS_API_URL === "") {
                 loadFromLocalStorage();
                 return;
             }
 
-            fetch(GAS_API_URL)
+            // 💡【変更点】URL末尾に現在ミリ秒(_t=...)を付与してブラウザキャッシュを完全回避
+            const cacheBusterUrl = GAS_API_URL + (GAS_API_URL.includes('?') ? '&' : '?') + '_t=' + new Date().getTime();
+
+            fetch(cacheBusterUrl)
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === "success" && data.items && data.items.length > 0) {
@@ -171,15 +156,13 @@
                     console.error("localStorageのパースエラー:", e);
                 }
             }
-            
+
             const loadingMsg = document.getElementById("loadingMsg");
             if (loadingMsg) loadingMsg.style.display = "none";
 
-            // 💡 データ読み込み・キャッシュ構築が完全に終わったここで自動生成をキックする
             checkUrlParamAndAdd();
         }
 
-        // 🔗 URLの ?jan=XXXXXX を検知して自動で値札を追加する処理
         function checkUrlParamAndAdd() {
             const urlParams = new URLSearchParams(window.location.search);
             const targetJan = urlParams.get('jan');
@@ -229,14 +212,13 @@
             nameInput.focus();
         }
 
-        // 🏷️ 値札HTMLの生成を共通関数化
         function createTagElement(item, qty) {
             const container = document.getElementById('tagContainer');
 
             for (let i = 0; i < qty; i++) {
                 const div = document.createElement('div');
                 div.className = 'tag';
-                
+
                 const w = (item.wholesaler || "").trim();
                 if (w.includes("ダイコー")) {
                     div.classList.add('wholesaler-daiko');
@@ -247,7 +229,7 @@
                 } else {
                     div.classList.add('wholesaler-other');
                 }
-                
+
                 const displayName = (item.priceTagItemName && item.priceTagItemName.trim() !== "") 
                     ? item.priceTagItemName 
                     : item.itemName;
@@ -293,12 +275,12 @@
                     <div class="color-bar"></div>
                 `;
                 container.appendChild(div);
-                
+
                 const svg = div.querySelector('.barcode');
                 svg.setAttribute("preserveAspectRatio", "none");
-                
+
                 const codeStr = String(item.jan || "").trim();
-                
+
                 try {
                     JsBarcode(svg, codeStr || "000000", { 
                         format: "code128", 
