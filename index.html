@@ -1,23 +1,113 @@
-<!DOCTYPE html><html lang="ja"><head>    <meta charset="UTF-8">    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>発注管理システム</title>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>発注管理システム</title>
     <!-- 📄 PDF出力用のライブラリ (html2pdf.js) を読み込み -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-    <style>        body { font-family: sans-serif; margin: 20px; background-color: #f5f5f5; color: #333; }        .main-container { max-width: 650px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }        .left-side { width: 100%; }        .right-side { width: 100%; display: flex; flex-direction: column; gap: 15px; }        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); box-sizing: border-box; }        .form-group { margin-bottom: 15px; }        label { display: block; margin-bottom: 5px; font-weight: bold; }        input[type="text"], input[type="number"], input[type="password"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }        button, input[type="submit"] { background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; margin-bottom: 5px; }        button:hover, input[type="submit"]:hover { background-color: #0056b3; }        .wholesaler-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }        .wholesaler-actions { flex: 1 1 calc(50% - 5px); min-width: 140px; padding: 10px; background: #e7f5ff; border-radius: 6px; border: 1px solid #a5d8ff; box-sizing: border-box; }        .wholesaler-title { margin: 0 0 5px 0; font-size: 13px; font-weight: bold; color: #1971c2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }        .btn-print { background-color: #28a745; margin: 0; padding: 8px 10px; font-size: 14px; }        .btn-print:hover { background-color: #218838; }        h2 { margin-top: 20px; border-bottom: 2px solid #007bff; padding-bottom: 5px; font-size: 18px; }        ul { list-style: none; padding: 0; }        li { background: #eee; margin-bottom: 5px; padding: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }        .item-info { display: flex; flex-direction: column; }        .btn-delete { background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; width: auto; font-size: 14px; margin: 0; }        .btn-delete:hover { background-color: #bd2130; }        .log-section { background-color: #e3fafc; border: 1px solid #c5f6fa; }        .log-list-container { max-height: 250px; overflow-y: auto; background: white; padding: 10px; border-radius: 4px; border: 1px solid #dee2e6; }        .log-item { font-size: 13px; padding: 6px 0; border-bottom: 1px solid #f1f3f5; }        .log-item:last-child { border-bottom: none; }        .log-date { color: #868e96; font-size: 11px; }        .master-section { background-color: #fff9db; border: 1px solid #ffe3e3; }        .master-header-box { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #d9480f; padding-bottom: 5px; margin-top: 20px; }            /* 🔗 ボタンを並べるエリアのスタイル */        .master-action-buttons { display: flex; gap: 8px; margin-top: 10px; }        .btn-open-tab { background-color: #e28743; color: white; text-decoration: none; padding: 8px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; text-align: center; flex: 1; display: inline-block; }        .btn-open-tab:hover { background-color: #cf7735; }        .btn-tag-tab { background-color: #20c997; }        .btn-tag-tab:hover { background-color: #17b886; }        
-        /* 📖 マニュアルPDFダウンロードボタンのスタイル */        .btn-pdf-manual { background-color: #7950f8; margin-top: 10px; }        .btn-pdf-manual:hover { background-color: #6741d9; }
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f5f5f5; color: #333; }
+        .main-container { max-width: 650px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+        .left-side { width: 100%; }
+        .right-side { width: 100%; display: flex; flex-direction: column; gap: 15px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); box-sizing: border-box; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], input[type="number"], input[type="password"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        button, input[type="submit"] { background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; margin-bottom: 5px; }
+        button:hover, input[type="submit"]:hover { background-color: #0056b3; }
+        .wholesaler-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .wholesaler-actions { flex: 1 1 calc(50% - 5px); min-width: 140px; padding: 10px; background: #e7f5ff; border-radius: 6px; border: 1px solid #a5d8ff; box-sizing: border-box; }
+        .wholesaler-title { margin: 0 0 5px 0; font-size: 13px; font-weight: bold; color: #1971c2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .btn-print { background-color: #28a745; margin: 0; padding: 8px 10px; font-size: 14px; }
+        .btn-print:hover { background-color: #218838; }
+        h2 { margin-top: 20px; border-bottom: 2px solid #007bff; padding-bottom: 5px; font-size: 18px; }
+        ul { list-style: none; padding: 0; }
+        li { background: #eee; margin-bottom: 5px; padding: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .item-info { display: flex; flex-direction: column; }
+        .btn-delete { background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; width: auto; font-size: 14px; margin: 0; }
+        .btn-delete:hover { background-color: #bd2130; }
+        .log-section { background-color: #e3fafc; border: 1px solid #c5f6fa; }
+        .log-list-container { max-height: 250px; overflow-y: auto; background: white; padding: 10px; border-radius: 4px; border: 1px solid #dee2e6; }
+        .log-item { font-size: 13px; padding: 6px 0; border-bottom: 1px solid #f1f3f5; }
+        .log-item:last-child { border-bottom: none; }
+        .log-date { color: #868e96; font-size: 11px; }
+        .master-section { background-color: #fff9db; border: 1px solid #ffe3e3; }
+        .master-header-box { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #d9480f; padding-bottom: 5px; margin-top: 20px; }
+        /* 🔗 ボタンを並べるエリアのスタイル */
+        .master-action-buttons { display: flex; gap: 8px; margin-top: 10px; }
+        .btn-open-tab { background-color: #e28743; color: white; text-decoration: none; padding: 8px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; text-align: center; flex: 1; display: inline-block; }
+        .btn-open-tab:hover { background-color: #cf7735; }
+        .btn-tag-tab { background-color: #20c997; }
+        .btn-tag-tab:hover { background-color: #17b886; }
+        
+        /* 📖 マニュアルPDFダウンロードボタンのスタイル */
+        .btn-pdf-manual { background-color: #7950f8; margin-top: 10px; }
+        .btn-pdf-manual:hover { background-color: #6741d9; }
 
-        .master-count { font-size: 14px; color: #666; margin: 10px 0; font-weight: bold; }        .search-input { width: 100%; padding: 6px 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background-color: #f8f9fa; }        .master-list-container { max-height: 250px; overflow-y: auto; border: 1px solid #ddd; background: white; padding: 10px; border-radius: 4px; }        .master-item { font-size: 14px; padding: 6px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .master-count { font-size: 14px; color: #666; margin: 10px 0; font-weight: bold; }
+        .search-input { width: 100%; padding: 6px 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background-color: #f8f9fa; }
+        .master-list-container { max-height: 250px; overflow-y: auto; border: 1px solid #ddd; background: white; padding: 10px; border-radius: 4px; }
+        .master-item { font-size: 14px; padding: 6px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
 
-        /* 🔒 ログイン画面（オーバーレイ）のスタイル */        #authOverlay {            position: fixed;            top: 0;            left: 0;            width: 100%;            height: 100%;            background: rgba(0, 0, 0, 0.85);            display: flex;            justify-content: center;            align-items: center;            z-index: 9999;        }
-        .auth-card {            background: white;            padding: 30px;            border-radius: 8px;            width: 90%;            max-width: 350px;            box-shadow: 0 4px 15px rgba(0,0,0,0.3);            text-align: center;        }
-        .auth-card h2 {            margin-top: 0;            color: #333;            border-bottom: none;        }
-        #authError {            color: #dc3545;            font-size: 14px;            margin-top: 10px;            display: none;        }
+        /* 🔒 ログイン画面（オーバーレイ）のスタイル */
+        #authOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .auth-card {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 350px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        .auth-card h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: none;
+        }
+        #authError {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
 
-        @media screen and (min-width: 1024px) {            .main-container { max-width: 1250px; flex-direction: row; gap: 25px; }            .left-side { flex: 1.3; position: sticky; top: 20px; }            .right-side { flex: 0.7; }            .master-list-container { max-height: 400px; }        }
+        @media screen and (min-width: 1024px) {
+            .main-container { max-width: 1250px; flex-direction: row; gap: 25px; }
+            .left-side { flex: 1.3; position: sticky; top: 20px; }
+            .right-side { flex: 0.7; }
+            .master-list-container { max-height: 400px; }
+        }
         #printArea { display: none; }
 
-        /* 🖨️ PDF出力用マニュアルの見た目（普段は画面から隠しておく） */        #manualContent { display: none; }
+        /* 🖨️ PDF出力用マニュアルの見た目（普段は画面から隠しておく） */
+        #manualContent { display: none; }
 
-        @media print {            body { background: white; color: black; margin: 0; padding: 0; }            .main-container { display: none; }            #printArea { display: block; padding: 20px; }            .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; }            .print-table th, .print-table td { border: 1px solid #000; padding: 8px; text-align: left; }            .print-header { text-align: center; margin-bottom: 30px; }        }    </style></head><body>
+        @media print {
+            body { background: white; color: black; margin: 0; padding: 0; }
+            .main-container { display: none; }
+            #printArea { display: block; padding: 20px; }
+            .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            .print-table th, .print-table td { border: 1px solid #000; padding: 8px; text-align: left; }
+            .print-header { text-align: center; margin-bottom: 30px; }
+        }
+    </style>
+</head>
+<body>
 
     <!-- 🔒 パスワードログイン画面 -->
     <div id="authOverlay">
@@ -225,12 +315,24 @@
                 datalist.innerHTML += `<option value="${name}">`;                
                 if (keyword === "" || translateHanToZen(name).toLowerCase().includes(keyword)) {                    
                     let sellingPriceText = (p.sellingPrice !== undefined && p.sellingPrice !== "") ? Number(p.sellingPrice).toLocaleString() + "円" : "売価未設定";                                                        
+                    
+                    // 職員価格（staffPrice があれば優先、なければ costPrice を使用）
+                    let staffPriceVal = (p.staffPrice !== undefined && p.staffPrice !== "") ? p.staffPrice : p.costPrice;
+                    let staffPriceText = (staffPriceVal !== undefined && staffPriceVal !== "") ? Number(staffPriceVal).toLocaleString() + "円" : "未設定";
+
                     itemsListDiv.innerHTML += `                        
                         <div class="master-item">                            
-                            <div><strong>${name}</strong> <span style="color:#666; font-size:12px;">(${p.wholesaler || '未設定'})</span></div>                            
-                            <div style="color:#d9480f; font-weight:bold; font-size:13px;">${sellingPriceText}</div>                        
-                        </div>`;                    count++;                }            });            
-            document.getElementById("masterCount").innerText = "登録件数：" + count + " 件";        }
+                            <div style="color:#333;"><strong>${name}</strong></div>                            
+                            <div style="font-size:13px;">
+                                <span style="color:#d9480f; font-weight:bold;">${sellingPriceText}</span>
+                                <span style="color:#333; margin-left:4px;">(職員:${staffPriceText})</span>
+                            </div>                        
+                        </div>`;                    
+                    count++;                
+                }            
+            });            
+            document.getElementById("masterCount").innerText = "登録件数：" + count + " 件";        
+        }
 
         function autoFill() {            
             let name = document.getElementById("itemName").value.trim();            
@@ -377,4 +479,6 @@
                 element.style.display = "none"; // 終わったら非表示に戻す
             });
         }
-    </script></body></html>
+    </script>
+</body>
+</html>
