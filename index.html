@@ -196,7 +196,7 @@
 
         <h3 style="background: #e7f5ff; padding: 6px 10px; color: #1971c2; font-size: 14px; border-left: 4px solid #1971c2; margin-top: 15px;">2. 商品を注文カゴに入れる（発注登録）</h3>
         <p style="font-size: 12px; line-height: 1.5; margin: 6px 0 10px 10px;">
-            左側の「発注登録」で<b>商品名</b>を入力します（候補が出たらクリックすると便利）。次に<b>発注先</b>を選び（自動で入ることもあります）、<b>発注数量</b>を入力します。最後に<b>【発注カゴに追加】</b>を押すと、下の「発注待ちリスト」にたまります。
+            左側の「発注登録」で<b>商品名</b>を入力します（候補が出たらクリックすると便利）。商品を選ぶと発注先やデフォルト数量が自動入力されます。最後に<b>【発注カゴに追加】</b>を押すと、下の「発注待ちリスト」にたまります。
         </p>
 
         <h3 style="background: #e7f5ff; padding: 6px 10px; color: #1971c2; font-size: 14px; border-left: 4px solid #1971c2; margin-top: 15px;">3. 間違えて登録したときは？</h3>
@@ -273,8 +273,9 @@
         function initStorageData() {            
             if (!localStorage.getItem(STORAGE_KEY_PRODUCTS)) {                
                 localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify([                    
-                    { jan: "1111111111111", itemName: "ソフトサンティア", wholesaler: "ダイコー", costPrice: 500, sellingPrice: 800 },                    
-                    { jan: "2222222222222", wholesaler: "信公", costPrice: 1200, sellingPrice: 1500 }                ]));            }
+                    { jan: "1111111111111", itemName: "ソフトサンティア", wholesaler: "ダイコー", costPrice: 500, sellingPrice: 800, defaultQty: 1 },                    
+                    { jan: "2222222222222", itemName: "サンプル商品", wholesaler: "信公", costPrice: 1200, sellingPrice: 1500, defaultQty: 5 }               
+                ]));            }
             if (!localStorage.getItem(STORAGE_KEY_ORDERS)) {                
                 localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify([]));            }
             if (!localStorage.getItem(STORAGE_KEY_LOGS)) {                
@@ -305,18 +306,17 @@
             const datalist = document.getElementById("masterList");            
             const itemsListDiv = document.getElementById("masterItemsList");            
             datalist.innerHTML = "";            
-            itemsListDiv.innerHTML = "";                                
+            itemsListDiv.innerHTML = "";                                                
             let keyword = translateHanToZen(document.getElementById("masterSearchInput").value.trim()).toLowerCase();            
-            let products = getProducts();                                
+            let products = getProducts();                                        
             let count = 0;            
             products.forEach(p => {                
                 const name = (p.itemName || "").trim();                
-                if (!name) return;                                        
+                if (!name) return;                                                        
                 datalist.innerHTML += `<option value="${name}">`;                
                 if (keyword === "" || translateHanToZen(name).toLowerCase().includes(keyword)) {                    
-                    let sellingPriceText = (p.sellingPrice !== undefined && p.sellingPrice !== "") ? Number(p.sellingPrice).toLocaleString() + "円" : "売価未設定";                                                        
+                    let sellingPriceText = (p.sellingPrice !== undefined && p.sellingPrice !== "") ? Number(p.sellingPrice).toLocaleString() + "円" : "売価未設定";                                                                        
                     
-                    // 職員価格（staffPrice があれば優先、なければ costPrice を使用）
                     let staffPriceVal = (p.staffPrice !== undefined && p.staffPrice !== "") ? p.staffPrice : p.costPrice;
                     let staffPriceText = (staffPriceVal !== undefined && staffPriceVal !== "") ? Number(staffPriceVal).toLocaleString() + "円" : "未設定";
 
@@ -331,8 +331,7 @@
                     count++;                
                 }            
             });            
-            document.getElementById("masterCount").innerText = "登録件数：" + count + " 件";        
-        }
+            document.getElementById("masterCount").innerText = "登録件数：" + count + " 件";        }
 
         function autoFill() {            
             let name = document.getElementById("itemName").value.trim();            
@@ -340,13 +339,20 @@
             let products = getProducts();            
             let found = products.find(p => (p.itemName || "").trim() === name);            
             if (found) {                
-                document.getElementById("itemWholesaler").value = found.wholesaler || "";            }        }
+                // 発注先の自動入力
+                document.getElementById("itemWholesaler").value = found.wholesaler || "";
+                
+                // デフォルト数量（defaultQty）が設定されていれば自動入力、なければそのまま（または1）
+                if (found.defaultQty !== undefined && found.defaultQty !== "" && !isNaN(found.defaultQty)) {
+                    document.getElementById("itemQty").value = found.defaultQty;
+                }
+            }        }
 
         function updatePrintButtons() {            
             const container = document.getElementById("printButtons");            
             const section = document.getElementById("printSection");            
             let orders = getOrders();            
-            let wholesalers = new Set();                        
+            let wholesalers = new Set();                                    
             orders.forEach(o => {                
                 if (o.wholesaler) wholesalers.add(o.wholesaler);            });
 
@@ -361,7 +367,7 @@
             event.preventDefault();            
             const name = document.getElementById("itemName").value.trim();            
             const wholesaler = document.getElementById("itemWholesaler").value.trim();            
-            const qty = parseInt(document.getElementById("itemQty").value) || 1;                        
+            const qty = parseInt(document.getElementById("itemQty").value) || 1;                                        
             if (!name || !wholesaler) return;
 
             let orders = getOrders();            
