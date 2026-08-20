@@ -276,8 +276,8 @@
         function initStorageData() {            
             if (!localStorage.getItem(STORAGE_KEY_PRODUCTS)) {                
                 localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify([                    
-                    { jan: "1111111111111", itemName: "ソフトサンティア", wholesaler: "ダイコー", costPrice: 500, sellingPrice: 800, defaultQty: 1 },                    
-                    { jan: "2222222222222", itemName: "サンプル商品", wholesaler: "信公", costPrice: 1200, sellingPrice: 1500, defaultQty: 5 }               
+                    { jan: "1111111111111", priceTagItemName: "ソフトサンティア", itemName: "ソフトサンティア", wholesaler: "ダイコー", costPrice: 500, sellingPrice: 800, defaultQty: 1 },                    
+                    { jan: "2222222222222", priceTagItemName: "サンプル商品", itemName: "サンプル商品", wholesaler: "信公", costPrice: 1200, sellingPrice: 1500, defaultQty: 5 }               
                 ]));            }
             if (!localStorage.getItem(STORAGE_KEY_ORDERS)) {                
                 localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify([]));            }
@@ -302,7 +302,7 @@
 
         function translateHanToZen(str) {            
             if (!str) return "";            
-            const kanaMap = {'ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ','ｶ':'カ','ｷ':'キ','ｸ':'ク','ｹ':'ケ','ｺ':'コ','ｻ':'サ','ｼ':'シ','ｽ':'ｽ','ｾ':'セ','ｿ':'ソ','ﾀ':'タ','ﾁ':'チ','ﾂ':'ツ','ﾃ':'テ','ﾄ':'ト','ﾅ':'ナ','ﾆ':'ニ','ﾇ':'ヌ','ﾈ':'ネ','ﾉ':'ノ','ﾊ':'ハ','ﾋ':'ヒ','ﾌ':'フ','ﾍ':'ヘ','ﾎ':'ホ','ﾏ':'マ','ﾐ':'ミ','ﾑ':'ム','ﾒ':'メ','ﾓ':'モ','ﾔ':'ヤ','ﾕ':'ユ','ﾖ':'ヨ','ﾗ':'ラ','ﾘ':'リ','ﾙ':'ル','ﾚ':'レ','ﾛ':'ロ','ﾜ':'ワ','ｦ':'ヲ','ﾝ':'ン','ｧ':'ァ','ｨ':'ィ','ｩ':'ゥ','ｪ':'ェ','ｫ':'ォ','ｬ':'ャ','ｭ':'ュ','ｮ':'ョ','ｯ':'ッ','ｰ':'ー','ﾞ':'゛','ﾟ':'゜'};            
+            const kanaMap = {'ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ','ｶ':'カ','ｷ':'キ','ｸ':'ク','ｹ':'ケ','ｺ':'コ','ｻ':'サ','ｼ':'シ','ｽ':'ス','ｾ':'セ','ｿ':'ソ','ﾀ':'タ','ﾁ':'チ','ﾂ':'ツ','ﾃ':'テ','ﾄ':'ト','ﾅ':'ナ','ﾆ':'ニ','ﾇ':'ヌ','ﾈ':'ネ','ﾉ':'ノ','ﾊ':'ハ','ﾋ':'ヒ','ﾌ':'フ','ﾍ':'ヘ','ﾎ':'ホ','ﾏ':'マ','ﾐ':'ミ','ﾑ':'ム','ﾒ':'メ','ﾓ':'モ','ﾔ':'ヤ','ﾕ':'ユ','ﾖ':'ヨ','ﾗ':'ラ','ﾘ':'リ','ﾙ':'ル','ﾚ':'レ','ﾛ':'ロ','ﾜ':'ワ','ｦ':'ヲ','ﾝ':'ン','ｧ':'ァ','ｨ':'ィ','ｩ':'ゥ','ｪ':'ェ','ｫ':'ォ','ｬ':'ャ','ｭ':'ュ','ｮ':'ョ','ｯ':'ッ','ｰ':'ー','ﾞ':'゛','ﾟ':'゜'};            
             return str.replace(/[ｱ-ﾝｧ-ｫｬ-ｮｯｰﾞﾟ]/g, s => kanaMap[s] || s);        }
 
         function updateMasterSuggestList() {            
@@ -314,7 +314,8 @@
             let products = getProducts();                                        
             let count = 0;            
             products.forEach(p => {                
-                const name = (p.itemName || "").trim();                
+                // priceTagItemNameを優先し、なければitemNameを使用
+                const name = (p.priceTagItemName || p.itemName || "").trim();                
                 if (!name) return;                                                        
                 datalist.innerHTML += `<option value="${name}">`;                
                 if (keyword === "" || translateHanToZen(name).toLowerCase().includes(keyword)) {                    
@@ -340,7 +341,8 @@
             let name = document.getElementById("itemName").value.trim();            
             if (!name) return;            
             let products = getProducts();            
-            let found = products.find(p => (p.itemName || "").trim() === name);            
+            // priceTagItemName または itemName が一致するものを探す
+            let found = products.find(p => (p.priceTagItemName || "").trim() === name || (p.itemName || "").trim() === name);            
             if (found) {                
                 document.getElementById("itemWholesaler").value = found.wholesaler || "";
                 if (found.defaultQty !== undefined && found.defaultQty !== "" && !isNaN(found.defaultQty)) {
@@ -414,14 +416,17 @@
             let orderRows = "";
 
             targetOrders.forEach(item => {                
-                let prod = products.find(p => (p.itemName || "").trim() === item.itemName);                
+                // 印刷時も priceTagItemName を優先して取得（マスターにある場合は priceTagItemName、なければカゴに保存された itemName）
+                let prod = products.find(p => (p.priceTagItemName || "").trim() === item.itemName || (p.itemName || "").trim() === item.itemName);                
+                let printName = (prod && prod.priceTagItemName) ? prod.priceTagItemName : item.itemName;
+
                 let cost = prod && prod.costPrice ? Number(prod.costPrice) : 0;                
                 let subtotal = cost * item.quantity;                
                 total += subtotal;
 
                 if (w === '信公') {                    
-                    orderRows += `<tr><td>${item.itemName}</td><td>${item.quantity}</td><td>${cost.toLocaleString()}円</td><td>${subtotal.toLocaleString()}円</td></tr>`;                } else {                    
-                    orderRows += `<tr><td>${item.itemName}</td><td>${item.quantity}</td></tr>`;                }            });
+                    orderRows += `<tr><td>${printName}</td><td>${item.quantity}</td><td>${cost.toLocaleString()}円</td><td>${subtotal.toLocaleString()}円</td></tr>`;                } else {                    
+                    orderRows += `<tr><td>${printName}</td><td>${item.quantity}</td></tr>`;                }            });
 
             if (w === '信公' && total < 20000) {                
                 alert("警告：信公への発注合計金額が20,000円に達していません！（現在: " + total.toLocaleString() + "円）");            }
@@ -460,7 +465,6 @@
             let logs = getLogs();
             let keyword = translateHanToZen(document.getElementById("logSearchInput").value.trim()).toLowerCase();
 
-            // キーワードで絞り込み
             let filteredLogs = logs.filter(c => {
                 if (!keyword) return true;
                 const itemName = (c.itemName || "").toLowerCase();
