@@ -102,9 +102,11 @@
             body { background: white; color: black; margin: 0; padding: 0; }
             .main-container { display: none; }
             #printArea { display: block; padding: 20px; }
-            .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            .print-header-top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; }
+            .print-datetime { font-size: 12px; color: #333; }
+            .print-header { text-align: center; margin-bottom: 20px; }
+            .print-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
             .print-table th, .print-table td { border: 1px solid #000; padding: 8px; text-align: left; }
-            .print-header { text-align: center; margin-bottom: 30px; }
         }
     </style>
 </head>
@@ -314,7 +316,6 @@
             let products = getProducts();                                        
             let count = 0;            
             products.forEach(p => {                
-                // priceTagItemNameを優先し、なければitemNameを使用
                 const name = (p.priceTagItemName || p.itemName || "").trim();                
                 if (!name) return;                                                        
                 datalist.innerHTML += `<option value="${name}">`;                
@@ -341,7 +342,6 @@
             let name = document.getElementById("itemName").value.trim();            
             if (!name) return;            
             let products = getProducts();            
-            // priceTagItemName または itemName が一致するものを探す
             let found = products.find(p => (p.priceTagItemName || "").trim() === name || (p.itemName || "").trim() === name);            
             if (found) {                
                 document.getElementById("itemWholesaler").value = found.wholesaler || "";
@@ -416,23 +416,45 @@
             let orderRows = "";
 
             targetOrders.forEach(item => {                
-                // 印刷時も priceTagItemName を優先して取得（マスターにある場合は priceTagItemName、なければカゴに保存された itemName）
                 let prod = products.find(p => (p.priceTagItemName || "").trim() === item.itemName || (p.itemName || "").trim() === item.itemName);                
                 let printName = (prod && prod.priceTagItemName) ? prod.priceTagItemName : item.itemName;
+                let janCode = (prod && prod.jan) ? prod.jan : "";
 
                 let cost = prod && prod.costPrice ? Number(prod.costPrice) : 0;                
                 let subtotal = cost * item.quantity;                
                 total += subtotal;
 
                 if (w === '信公') {                    
-                    orderRows += `<tr><td>${printName}</td><td>${item.quantity}</td><td>${cost.toLocaleString()}円</td><td>${subtotal.toLocaleString()}円</td></tr>`;                } else {                    
-                    orderRows += `<tr><td>${printName}</td><td>${item.quantity}</td></tr>`;                }            });
+                    orderRows += `<tr><td>${janCode}</td><td>${printName}</td><td>${item.quantity}</td><td>${cost.toLocaleString()}円</td><td>${subtotal.toLocaleString()}円</td></tr>`;                } else {                    
+                    orderRows += `<tr><td>${janCode}</td><td>${printName}</td><td>${item.quantity}</td></tr>`;                }            });
 
             if (w === '信公' && total < 20000) {                
                 alert("警告：信公への発注合計金額が20,000円に達していません！（現在: " + total.toLocaleString() + "円）");            }
 
-            let html = `<div class="print-header"><h1>発注依頼書（${w} 御中）</h1></div><table class="print-table"><thead><tr><th>商品名</th><th>数量</th>${w === '信公' ? '<th>単価(仕入)</th><th>小計</th>' : ''}</tr></thead><tbody>${orderRows}</tbody>`;            
-            if (w === '信公') html += `<tfoot><tr><td colspan="3" style="text-align:right; font-weight:bold;">合計金額</td><td style="font-weight:bold;">${total.toLocaleString()}円</td></tr></tfoot>`;                        
+            // 印刷時の現在日時を取得
+            let nowStr = new Date().toLocaleString();
+
+            let html = `
+                <div class="print-header-top">
+                    <div class="print-datetime">印刷日時：${nowStr}</div>
+                </div>
+                <div class="print-header">
+                    <h1>発注依頼書（${w} 御中）</h1>
+                </div>
+                <table class="print-table">
+                    <thead>
+                        <tr>
+                            <th>JAN</th>
+                            <th>商品名</th>
+                            <th>数量</th>
+                            ${w === '信公' ? '<th>単価(仕入)</th><th>小計</th>' : ''}
+                        </tr>
+                    </thead>
+                    <tbody>${orderRows}</tbody>`;
+            
+            if (w === '信公') {
+                html += `<tfoot><tr><td colspan="4" style="text-align:right; font-weight:bold;">合計金額</td><td style="font-weight:bold;">${total.toLocaleString()}円</td></tr></tfoot>`;
+            }                        
             
             printArea.innerHTML = html + `</table>`;            
             window.print();            
