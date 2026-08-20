@@ -36,23 +36,18 @@
         .log-date { color: #868e96; font-size: 11px; }
         .master-section { background-color: #fff9db; border: 1px solid #ffe3e3; }
         .master-header-box { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #d9480f; padding-bottom: 5px; margin-top: 20px; }
-        /* 🔗 ボタンを並べるエリアのスタイル */
         .master-action-buttons { display: flex; gap: 8px; margin-top: 10px; }
         .btn-open-tab { background-color: #e28743; color: white; text-decoration: none; padding: 8px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; text-align: center; flex: 1; display: inline-block; }
         .btn-open-tab:hover { background-color: #cf7735; }
         .btn-tag-tab { background-color: #20c997; }
         .btn-tag-tab:hover { background-color: #17b886; }
-        
-        /* 📖 マニュアルPDFダウンロードボタンのスタイル */
         .btn-pdf-manual { background-color: #7950f8; margin-top: 10px; }
         .btn-pdf-manual:hover { background-color: #6741d9; }
-
         .master-count { font-size: 14px; color: #666; margin: 10px 0; font-weight: bold; }
         .search-input { width: 100%; padding: 6px 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background-color: #f8f9fa; }
         .master-list-container { max-height: 250px; overflow-y: auto; border: 1px solid #ddd; background: white; padding: 10px; border-radius: 4px; }
         .master-item { font-size: 14px; padding: 6px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
 
-        /* 🔒 ログイン画面（オーバーレイ）のスタイル */
         #authOverlay {
             position: fixed;
             top: 0;
@@ -94,8 +89,6 @@
             .log-list-container { max-height: 350px; }
         }
         #printArea { display: none; }
-
-        /* 🖨️ PDF出力用マニュアルの見た目（普段は画面から隠しておく） */
         #manualContent { display: none; }
 
         @media print {
@@ -105,14 +98,14 @@
             .print-header-top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; }
             .print-datetime { font-size: 12px; color: #333; }
             .print-header { text-align: center; margin-bottom: 20px; }
-            .print-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            .print-table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; }
             .print-table th, .print-table td { border: 1px solid #000; padding: 8px; text-align: left; }
+            .print-section-title { font-size: 16px; font-weight: bold; margin-top: 20px; margin-bottom: 5px; border-bottom: 2px solid #333; padding-bottom: 3px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- 🔒 パスワードログイン画面 -->
     <div id="authOverlay">
         <div class="auth-card">
             <h2>発注管理システム</h2>
@@ -164,7 +157,6 @@
         <div class="right-side">
             <div class="card log-section">
                 <h2>最近の発注</h2>
-                <!-- 🔍 履歴検索用入力フィールド -->
                 <input type="text" id="logSearchInput" class="search-input" placeholder="🔍 履歴を検索..." oninput="displayLogs()">
                 <div class="log-list-container" id="logItemsList"></div>
             </div>
@@ -177,7 +169,6 @@
                     <a href="tags.html" target="_blank" class="btn-open-tab btn-tag-tab">値札を作る ↗</a>
                 </div>
 
-                <!-- 📖 マニュアルPDFダウンロードボタン -->
                 <button class="btn-pdf-manual" onclick="downloadManualPDF()">📖 操作マニュアルをPDFで保存</button>
 
                 <div id="masterCount" class="master-count">登録件数：0 件</div>
@@ -189,7 +180,6 @@
 
     <div id="printArea"></div>
 
-    <!-- 📄 PDF化するためのマニュアル原稿（非表示） -->
     <div id="manualContent" style="padding: 15px; font-family: sans-serif; color: #333; background: white; width: 170mm; box-sizing: border-box; word-break: break-all; overflow-wrap: break-word;">
         <h1 style="text-align: center; color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 10px; font-size: 20px;">発注管理システム かんたん操作マニュアル</h1>
         <p style="font-size: 11px; color: #666; text-align: right; margin-bottom: 15px;">対象者：全スタッフ（保存用）</p>
@@ -201,23 +191,12 @@
 
         <h3 style="background: #e7f5ff; padding: 6px 10px; color: #1971c2; font-size: 14px; border-left: 4px solid #1971c2; margin-top: 15px;">2. 商品を注文カゴに入れる（発注登録）</h3>
         <p style="font-size: 12px; line-height: 1.5; margin: 6px 0 10px 10px;">
-            左側の「発注登録」で<b>商品名</b>を入力します（候補が出たらクリックすると便利）。商品を選ぶと発注先やデフォルト数量が自動入力されます。最後に<b>【発注カゴに追加】</b>を押すと、下の「発注待ちリスト」にたまります。
+            左側の「発注登録」で<b>商品名</b>を入力します。商品を選ぶと発注先やデフォルト数量が自動入力されます。最後に<b>【発注カゴに追加】</b>を押します。
         </p>
 
-        <h3 style="background: #e7f5ff; padding: 6px 10px; color: #1971c2; font-size: 14px; border-left: 4px solid #1971c2; margin-top: 15px;">3. 間違えて登録したときは？</h3>
+        <h3 style="background: #e7f5ff; padding: 6px 10px; color: #1971c2; font-size: 14px; border-left: 4px solid #1971c2; margin-top: 15px;">3. 注文書を印刷する（発注する）</h3>
         <p style="font-size: 12px; line-height: 1.5; margin: 6px 0 10px 10px;">
-            リストの右側にある<b>【削除】</b>ボタンを押すと、カゴから消すことができます。
-        </p>
-
-        <h3 style="background: #e7f5ff; padding: 6px 10px; color: #1971c2; font-size: 14px; border-left: 4px solid #1971c2; margin-top: 15px;">4. 注文書を印刷する（発注する）</h3>
-        <p style="font-size: 12px; line-height: 1.5; margin: 6px 0 10px 10px;">
-            カゴにためると、下に発注先ごとの緑色の<b>【印刷する】</b>ボタンが出ます。ボタンを押して印刷します（※信公は2万円未満で警告が出ます）。印刷後に「〇〇への発注を完了しましたか？」と出ますが、<b>「OK」</b>を押すと「最近の発注」にデータが移り、<b>「キャンセル」</b>を押すと発注待ちリストに商品が残ります。
-        </p>
-
-        <h3 style="background: #e7f5ff; padding: 6px 10px; color: #1971c2; font-size: 14px; border-left: 4px solid #1971c2; margin-top: 15px;">5. 過去の履歴や商品を見る</h3>
-        <p style="font-size: 12px; line-height: 1.5; margin: 6px 0 10px 10px;">
-            <b>最近の発注：</b>検索窓を使って過去に注文した履歴を素早く確認できます。<br>
-            <b>商品情報一覧・値札を作る：</b>ボタンから別ページで詳細や値札を作成できます。
+            「信公」は専用の印刷ボタン、「信公以外」はまとめて1枚の用紙に印刷できるようになっています。印刷後に「発注を完了しましたか？」と出ますので、<b>「OK」</b>を押すと履歴に移動します。
         </p>
     </div>
 
@@ -279,8 +258,7 @@
             if (!localStorage.getItem(STORAGE_KEY_PRODUCTS)) {                
                 localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify([                    
                     { jan: "1111111111111", priceTagItemName: "ソフトサンティア", itemName: "ソフトサンティア", wholesaler: "ダイコー", costPrice: 500, sellingPrice: 800, defaultQty: 1 },                    
-                    { jan: "2222222222222", priceTagItemName: "サンプル商品", itemName: "サンプル商品", wholesaler: "信公", costPrice: 1200, sellingPrice: 1500, defaultQty: 5 }               
-                ]));            }
+                    { jan: "2222222222222", priceTagItemName: "サンプル商品", itemName: "サンプル商品", wholesaler: "信公", costPrice: 1200, sellingPrice: 1500, defaultQty: 5 }                ]));            }
             if (!localStorage.getItem(STORAGE_KEY_ORDERS)) {                
                 localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify([]));            }
             if (!localStorage.getItem(STORAGE_KEY_LOGS)) {                
@@ -304,24 +282,23 @@
 
         function translateHanToZen(str) {            
             if (!str) return "";            
-            const kanaMap = {'ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ','ｶ':'カ','ｷ':'キ','ｸ':'ク','ｹ':'ケ','ｺ':'コ','ｻ':'サ','ｼ':'シ','ｽ':'ス','ｾ':'セ','ｿ':'ソ','ﾀ':'タ','ﾁ':'チ','ﾂ':'ツ','ﾃ':'テ','ﾄ':'ト','ﾅ':'ナ','ﾆ':'ニ','ﾇ':'ヌ','ﾈ':'ネ','ﾉ':'ノ','ﾊ':'ハ','ﾋ':'ヒ','ﾌ':'フ','ﾍ':'ヘ','ﾎ':'ホ','ﾏ':'マ','ﾐ':'ミ','ﾑ':'ム','ﾒ':'メ','ﾓ':'モ','ﾔ':'ヤ','ﾕ':'ユ','ﾖ':'ヨ','ﾗ':'ラ','ﾘ':'リ','ﾙ':'ル','ﾚ':'レ','ﾛ':'ロ','ﾜ':'ワ','ｦ':'ヲ','ﾝ':'ン','ｧ':'ァ','ｨ':'ィ','ｩ':'ゥ','ｪ':'ェ','ｫ':'ォ','ｬ':'ャ','ｭ':'ュ','ｮ':'ョ','ｯ':'ッ','ｰ':'ー','ﾞ':'゛','ﾟ':'゜'};            
+            const kanaMap = {'ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ','ｶ':'カ','ｷ':'キ','ｸ':'ク','ｹ':'ケ','ｺ':'コ','ｻ':'サ','ｼ':'シ','ｽ':'す','ｾ':'セ','ｿ':'ソ','ﾀ':'タ','ﾁ':'チ','ﾂ':'ツ','ﾃ':'テ','ﾄ':'ト','ﾅ':'ナ','ﾆ':'ニ','ﾇ':'ヌ','ﾈ':'ネ','ﾉ':'ノ','ﾊ':'ハ','ﾋ':'ヒ','ﾌ':'フ','ﾍ':'ヘ','ﾎ':'ホ','ﾏ':'マ','ﾐ':'ミ','ﾑ':'ム','ﾒ':'メ','ﾓ':'モ','ﾔ':'ヤ','ﾕ':'ユ','ﾖ':'ヨ','ﾗ':'ラ','ﾘ':'リ','ﾙ':'ル','ﾚ':'レ','ﾛ':'ロ','ﾜ':'ワ','ｦ':'ヲ','ﾝ':'ン','ｧ':'ァ','ｨ':'ィ','ｩ':'ゥ','ｪ':'ェ','ｫ':'ォ','ｬ':'ャ','ｭ':'ュ','ｮ':'ョ','ｯ':'ッ','ｰ':'ー','ﾞ':'゛','ﾟ':'゜'};            
             return str.replace(/[ｱ-ﾝｧ-ｫｬ-ｮｯｰﾞﾟ]/g, s => kanaMap[s] || s);        }
 
         function updateMasterSuggestList() {            
             const datalist = document.getElementById("masterList");            
             const itemsListDiv = document.getElementById("masterItemsList");            
             datalist.innerHTML = "";            
-            itemsListDiv.innerHTML = "";                                                
+            itemsListDiv.innerHTML = "";                                                                
             let keyword = translateHanToZen(document.getElementById("masterSearchInput").value.trim()).toLowerCase();            
-            let products = getProducts();                                        
+            let products = getProducts();                                                        
             let count = 0;            
             products.forEach(p => {                
                 const name = (p.priceTagItemName || p.itemName || "").trim();                
-                if (!name) return;                                                        
+                if (!name) return;                                                                        
                 datalist.innerHTML += `<option value="${name}">`;                
                 if (keyword === "" || translateHanToZen(name).toLowerCase().includes(keyword)) {                    
-                    let sellingPriceText = (p.sellingPrice !== undefined && p.sellingPrice !== "") ? Number(p.sellingPrice).toLocaleString() + "円" : "売価未設定";                                                                        
-                    
+                    let sellingPriceText = (p.sellingPrice !== undefined && p.sellingPrice !== "") ? Number(p.sellingPrice).toLocaleString() + "円" : "売価未設定";                                                                                                    
                     let staffPriceVal = (p.staffPrice !== undefined && p.staffPrice !== "") ? p.staffPrice : p.costPrice;
                     let staffPriceText = (staffPriceVal !== undefined && staffPriceVal !== "") ? Number(staffPriceVal).toLocaleString() + "円" : "未設定";
 
@@ -333,9 +310,8 @@
                                 <span style="color:#333; margin-left:4px;">(職員:${staffPriceText})</span>
                             </div>                        
                         </div>`;                    
-                    count++;                
-                }            
-            });            
+                count++;                
+            }            });            
             document.getElementById("masterCount").innerText = "登録件数：" + count + " 件";        }
 
         function autoFill() {            
@@ -361,15 +337,25 @@
             container.innerHTML = "";            
             if (wholesalers.size > 0) {                
                 section.style.display = "block";                
-                Array.from(wholesalers).sort().forEach(w => {                    
-                    container.innerHTML += `<div class="wholesaler-actions"><p class="wholesaler-title">◆ ${w}</p><button class="btn-print" onclick="printOrder('${w}')">印刷する</button></div>`;                });            } else {                
+                
+                // 1. 「信公」が含まれている場合の個別ボタン
+                if (wholesalers.has('信公')) {
+                    container.innerHTML += `<div class="wholesaler-actions"><p class="wholesaler-title">◆ 信公</p><button class="btn-print" onclick="printOrder('信公')">信公を印刷する</button></div>`;
+                }
+
+                // 2. 「信公以外」の卸業者がある場合、1つにまとめた印刷ボタンを表示
+                let otherWholesalers = Array.from(wholesalers).filter(w => w !== '信公');
+                if (otherWholesalers.length > 0) {
+                    container.innerHTML += `<div class="wholesaler-actions" style="background: #e6fcf5; border-color: #96f2d7;"><p class="wholesaler-title" style="color: #0ca678;">◆ 信公以外（まとめ）</p><button class="btn-print" style="background-color: #12b886;" onclick="printOtherOrders()">一括印刷する</button></div>`;
+                }
+            } else {                
                 section.style.display = "none";            }        }
 
         function saveData(event) {            
             event.preventDefault();            
             const name = document.getElementById("itemName").value.trim();            
             const wholesaler = document.getElementById("itemWholesaler").value.trim();            
-            const qty = parseInt(document.getElementById("itemQty").value) || 1;                                        
+            const qty = parseInt(document.getElementById("itemQty").value) || 1;                                                                    
             if (!name || !wholesaler) return;
 
             let orders = getOrders();            
@@ -405,6 +391,7 @@
             saveOrders(orders);            
             displayData();        }
 
+        // --- 信公専用の印刷処理 ---
         function printOrder(w) {            
             currentPrintingWholesaler = w;            
             const printArea = document.getElementById("printArea");            
@@ -424,14 +411,11 @@
                 let subtotal = cost * item.quantity;                
                 total += subtotal;
 
-                if (w === '信公') {                    
-                    orderRows += `<tr><td>${janCode}</td><td>${printName}</td><td>${item.quantity}</td><td>${cost.toLocaleString()}円</td><td>${subtotal.toLocaleString()}円</td></tr>`;                } else {                    
-                    orderRows += `<tr><td>${janCode}</td><td>${printName}</td><td>${item.quantity}</td></tr>`;                }            });
+                orderRows += `<tr><td>${janCode}</td><td>${printName}</td><td>${item.quantity}</td><td>${cost.toLocaleString()}円</td><td>${subtotal.toLocaleString()}円</td></tr>`;            });
 
-            if (w === '信公' && total < 20000) {                
+            if (total < 20000) {                
                 alert("警告：信公への発注合計金額が20,000円に達していません！（現在: " + total.toLocaleString() + "円）");            }
 
-            // 印刷時の現在日時を取得
             let nowStr = new Date().toLocaleString();
 
             let html = `
@@ -447,29 +431,96 @@
                             <th>JAN</th>
                             <th>商品名</th>
                             <th>数量</th>
-                            ${w === '信公' ? '<th>単価(仕入)</th><th>小計</th>' : ''}
+                            <th>単価(仕入)</th>
+                            <th>小計</th>
                         </tr>
                     </thead>
-                    <tbody>${orderRows}</tbody>`;
+                    <tbody>${orderRows}</tbody>
+                    <tfoot><tr><td colspan="4" style="text-align:right; font-weight:bold;">合計金額</td><td style="font-weight:bold;">${total.toLocaleString()}円</td></tr></tfoot>
+                </table>`;
             
-            if (w === '信公') {
-                html += `<tfoot><tr><td colspan="4" style="text-align:right; font-weight:bold;">合計金額</td><td style="font-weight:bold;">${total.toLocaleString()}円</td></tr></tfoot>`;
-            }                        
-            
-            printArea.innerHTML = html + `</table>`;            
+            printArea.innerHTML = html;            
             window.print();            
             printArea.innerHTML = "";        }
 
+        // --- 信公「以外」をまとめて印刷する処理 ---
+        function printOtherOrders() {
+            currentPrintingWholesaler = "OTHERS_BUNDLE"; // 複数まとめた場合の特殊フラグ
+            const printArea = document.getElementById("printArea");
+            let orders = getOrders();
+            let products = getProducts();
+
+            // 信公以外の注文を抽出し、発注先ごとにグループ化
+            let otherOrders = orders.filter(o => o.wholesaler !== '信公');
+            let grouped = {};
+            otherOrders.forEach(o => {
+                if (!grouped[o.wholesaler]) {
+                    grouped[o.wholesaler] = [];
+                }
+                grouped[o.wholesaler].push(o);
+            });
+
+            let nowStr = new Date().toLocaleString();
+            let html = `
+                <div class="print-header-top">
+                    <div class="print-datetime">印刷日時：${nowStr}</div>
+                </div>
+                <div class="print-header">
+                    <h1>発注一覧表（各卸業者様）</h1>
+                </div>`;
+
+            // 発注先ごとに見出しとテーブルを生成
+            for (let w in grouped) {
+                let rows = "";
+                grouped[w].forEach(item => {
+                    let prod = products.find(p => (p.priceTagItemName || "").trim() === item.itemName || (p.itemName || "").trim() === item.itemName);
+                    let printName = (prod && prod.priceTagItemName) ? prod.priceTagItemName : item.itemName;
+                    let janCode = (prod && prod.jan) ? prod.jan : "";
+                    rows += `<tr><td>${janCode}</td><td>${printName}</td><td>${item.quantity}</td></tr>`;
+                });
+
+                html += `
+                    <div class="print-section-title">■ 発注先：${w} 御中</div>
+                    <table class="print-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 25%;">JAN</th>
+                                <th>商品名</th>
+                                <th style="width: 15%;">数量</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>`;
+            }
+
+            printArea.innerHTML = html;
+            window.print();
+            printArea.innerHTML = "";
+        }
+
         window.onafterprint = () => {            
             if (!currentPrintingWholesaler) return;            
-            if (confirm(currentPrintingWholesaler + " への発注を完了しましたか？")) {                
+
+            let confirmMsg = "";
+            let targetWholesalers = [];
+
+            if (currentPrintingWholesaler === "OTHERS_BUNDLE") {
+                confirmMsg = "印刷した「信公以外」の発注をすべて完了（履歴へ移動）しますか？";
+                let orders = getOrders();
+                targetWholesalers = Array.from(new Set(orders.map(o => o.wholesaler))).filter(w => w !== '信公');
+            } else {
+                confirmMsg = currentPrintingWholesaler + " への発注を完了しましたか？";
+                targetWholesalers = [currentPrintingWholesaler];
+            }
+
+            if (confirm(confirmMsg)) {                
                 let orders = getOrders();                
                 let logs = getLogs();                
                 let timestamp = new Date().toLocaleString();
 
                 let remainingOrders = [];                
                 orders.forEach(o => {                    
-                    if (o.wholesaler === currentPrintingWholesaler) {                        
+                    if (targetWholesalers.includes(o.wholesaler)) {                        
                         logs.unshift({...o, timestamp: timestamp});                    } else {                        
                         remainingOrders.push(o);                    }                });
 
@@ -503,10 +554,9 @@
         function filterMasterList() {            
             updateMasterSuggestList();        }
 
-        // 📖 マニュアルをPDFとして自動ダウンロードする関数
         function downloadManualPDF() {
             const element = document.getElementById("manualContent");
-            element.style.display = "block"; // 一時的に表示してPDF化
+            element.style.display = "block";
             
             const opt = {
                 margin:       15,
@@ -517,7 +567,7 @@
             };
 
             html2pdf().from(element).set(opt).save().then(() => {
-                element.style.display = "none"; // 終わったら非表示に戻す
+                element.style.display = "none";
             });
         }
     </script>
