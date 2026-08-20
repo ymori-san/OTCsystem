@@ -197,8 +197,11 @@
                 </div>
 
                 <div class="edit-form-group">
-                    <label>税率 (8 または 10)</label>
-                    <input type="number" id="editTax" value="10">
+                    <label>税率</label>
+                    <select id="editTax" class="search-box" style="width:100%; padding:8px;">
+                        <option value="10">10%</option>
+                        <option value="8">8%</option>
+                    </select>
                 </div>
                 <div class="edit-form-group">
                     <label>メーカー小売希望価格（税抜）</label>
@@ -401,7 +404,7 @@
         }
     }
 
-    // プルダウン「その他」の切り替え制御
+    // 商品区分の「その他」切り替え
     function handleCategoryChange() {
         const select = document.getElementById("editCategorySelect");
         const customInput = document.getElementById("editCategoryCustom");
@@ -414,6 +417,7 @@
         }
     }
 
+    // 発注先の「その他」切り替え
     function handleWholesalerChange() {
         const select = document.getElementById("editWholesalerSelect");
         const customInput = document.getElementById("editWholesalerCustom");
@@ -492,11 +496,8 @@
         document.getElementById("detailFields").style.display = "none";
         document.getElementById("toggleBtn").innerText = "▼ すべて表示（詳細項目）";
 
-        // 商品区分の設定用
         const catSelect = document.getElementById("editCategorySelect");
         const catCustom = document.getElementById("editCategoryCustom");
-
-        // 発注先の設定用
         const wholesaleSelect = document.getElementById("editWholesalerSelect");
         const wholesaleCustom = document.getElementById("editWholesalerCustom");
 
@@ -505,10 +506,13 @@
             document.getElementById("editItemName").value = item.itemName || "";
             document.getElementById("editCost").value = (item.costPrice !== undefined && item.costPrice !== null) ? item.costPrice : "";
             document.getElementById("editNote").value = item.note || "";
-            document.getElementById("editTax").value = (item.taxRate !== undefined && item.taxRate !== null) ? item.taxRate : 10;
             document.getElementById("editListPrice").value = (item.listPrice !== undefined && item.listPrice !== null) ? item.listPrice : "";
             document.getElementById("editSelling").value = (item.sellingPrice !== undefined && item.sellingPrice !== null) ? item.sellingPrice : "";
             document.getElementById("editDefaultQty").value = (item.defaultQty !== undefined && item.defaultQty !== null) ? item.defaultQty : "";
+
+            // 税率のセレクトボックス反映
+            const taxVal = (item.taxRate !== undefined && item.taxRate !== null) ? String(item.taxRate) : "10";
+            document.getElementById("editTax").value = (taxVal === "8" || taxVal === "8%") ? "8" : "10";
 
             // 商品区分の判定・割り当て
             const itemCat = item.category || "";
@@ -522,7 +526,7 @@
                 catCustom.style.display = "block";
                 catCustom.value = itemCat;
             } else {
-                catSelect.value = "一般用医薬品";
+                catSelect.value = "";
                 catCustom.style.display = "none";
                 catCustom.value = "";
             }
@@ -549,12 +553,12 @@
             document.getElementById("editItemName").value = "";
             document.getElementById("editCost").value = "";
             document.getElementById("editNote").value = "";
-            document.getElementById("editTax").value = 10;
+            document.getElementById("editTax").value = "10";
             document.getElementById("editListPrice").value = "";
             document.getElementById("editSelling").value = "";
             document.getElementById("editDefaultQty").value = "";
 
-            catSelect.value = "一般用医薬品";
+            catSelect.value = ""; // 新規時は未選択（空欄）
             catCustom.style.display = "none";
             catCustom.value = "";
 
@@ -572,17 +576,19 @@
         const itemName = document.getElementById("editItemName").value.trim();
         const cost = forceNumeric(document.getElementById("editCost").value);
         
-        // 商品区分の取得（「その他」ならカスタム入力欄を見る）
+        // 商品区分の取得（「その他」ならカスタム入力を見る）
         const catSelectVal = document.getElementById("editCategorySelect").value;
         const category = (catSelectVal === "その他") ? document.getElementById("editCategoryCustom").value.trim() : catSelectVal;
 
         const note = document.getElementById("editNote").value.trim();
         
-        // 発注先の取得（「その他」ならカスタム入力欄を見る）
+        // 発注先の取得（「その他」ならカスタム入力を見る）
         const wholesaleSelectVal = document.getElementById("editWholesalerSelect").value;
         const wholesaler = (wholesaleSelectVal === "その他") ? document.getElementById("editWholesalerCustom").value.trim() : wholesaleSelectVal;
 
+        // 税率プルダウンの取得
         const taxRate = forceNumeric(document.getElementById("editTax").value) === 8 ? 8 : 10;
+        
         const listPrice = forceNumeric(document.getElementById("editListPrice").value);
         const manualSelling = forceNumeric(document.getElementById("editSelling").value);
         const defaultQty = forceNumeric(document.getElementById("editDefaultQty").value);
