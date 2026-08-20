@@ -182,6 +182,10 @@
                     <label>売価（手動上書き用・空欄なら自動計算）</label>
                     <input type="number" id="editSelling" placeholder="自動計算">
                 </div>
+                <div class="edit-form-group">
+                    <label>初期数量 (defaultQty)</label>
+                    <input type="number" id="editDefaultQty" placeholder="0">
+                </div>
             </div>
 
             <button class="btn-update" onclick="saveSingleItem()">この内容でクラウドに保存・更新する</button>
@@ -447,6 +451,7 @@
             document.getElementById("editTax").value = (item.taxRate !== undefined && item.taxRate !== null) ? item.taxRate : 10;
             document.getElementById("editListPrice").value = (item.listPrice !== undefined && item.listPrice !== null) ? item.listPrice : "";
             document.getElementById("editSelling").value = (item.sellingPrice !== undefined && item.sellingPrice !== null) ? item.sellingPrice : "";
+            document.getElementById("editDefaultQty").value = (item.defaultQty !== undefined && item.defaultQty !== null) ? item.defaultQty : "";
         } else {
             title.innerText = "✨ 未登録の商品です（新規追加できます）";
             document.getElementById("editItemName").value = "";
@@ -457,6 +462,7 @@
             document.getElementById("editTax").value = 10;
             document.getElementById("editListPrice").value = "";
             document.getElementById("editSelling").value = "";
+            document.getElementById("editDefaultQty").value = "";
         }
 
         editArea.style.display = "block";
@@ -473,6 +479,7 @@
         const taxRate = forceNumeric(document.getElementById("editTax").value) === 8 ? 8 : 10;
         const listPrice = forceNumeric(document.getElementById("editListPrice").value);
         const manualSelling = forceNumeric(document.getElementById("editSelling").value);
+        const defaultQty = forceNumeric(document.getElementById("editDefaultQty").value);
 
         if (!jan || !itemName) {
             alert("JANコードと商品名は必須です。");
@@ -502,7 +509,8 @@
             sellingPrice: selling,
             category: category,
             note: note,
-            staffPrice: staff
+            staffPrice: staff,
+            defaultQty: defaultQty
         };
 
         const loading = document.getElementById("loading");
@@ -517,7 +525,6 @@
         .then(resData => {
             loading.style.display = "none";
             if (resData.status === "success") {
-                // 💡 保存成功後に「値札を作りますか？」と尋ねる処理
                 if (confirm("商品情報を正常に更新・保存しました！\n続けてこの商品の値札を作りますか？")) {
                     window.open(`tags.html?jan=${jan}`, '_blank');
                 }
@@ -580,7 +587,7 @@
     }
 
     function downloadCSV() {
-        let csv = "JAN,商品名,値札用商品名,発注先,税率,納入価,小売希望価格,売価,商品区分,用途,職員価格\n";
+        let csv = "JAN,商品名,値札用商品名,発注先,税率,納入価,小売希望価格,売価,商品区分,用途,職員価格,初期数量\n";
         Object.values(productCache).forEach(item => {
             const cleanItemName = (item.itemName || "").replace(/[\r\n]+/g, ' ');
             const cleanPriceTagName = (item.priceTagItemName || item.itemName || "").replace(/[\r\n]+/g, ' ');
@@ -588,7 +595,7 @@
             const cleanCategory = (item.category || "").replace(/[\r\n]+/g, ' ');
             const cleanNote = (item.note || "").replace(/[\r\n]+/g, ' ');
 
-            csv += `${item.jan},${cleanItemName},${cleanPriceTagName},${cleanWholesaler},${item.taxRate},${item.costPrice},${item.listPrice || 0},${item.sellingPrice},${cleanCategory},${cleanNote},${item.staffPrice || 0}\n`;
+            csv += `${item.jan},${cleanItemName},${cleanPriceTagName},${cleanWholesaler},${item.taxRate},${item.costPrice},${item.listPrice || 0},${item.sellingPrice},${cleanCategory},${cleanNote},${item.staffPrice || 0},${item.defaultQty || 0}\n`;
         });
         const blob = new Blob(['\uFEFF' + csv], { type: "text/csv;charset=utf-8;" });
         const link = document.createElement("a");
@@ -653,6 +660,11 @@
                         manualStaffPrice = forceNumeric(cols[10]);
                     }
 
+                    let defaultQty = 0;
+                    if (cols.length > 11 && cols[11] !== undefined && cols[11] !== "") {
+                        defaultQty = forceNumeric(cols[11]);
+                    }
+
                     let selling = 0;
                     if (manualSelling > 0) {
                         selling = manualSelling;
@@ -673,7 +685,7 @@
                     itemsToSend.push({
                         jan, itemName, priceTagItemName, wholesaler, taxRate,
                         costPrice: cost, listPrice, sellingPrice: selling,
-                        category, note, staffPrice: staff
+                        category, note, staffPrice: staff, defaultQty: defaultQty
                     });
                 });
 
