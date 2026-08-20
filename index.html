@@ -180,22 +180,23 @@
 
     <div id="printArea"></div>
 
-    <div id="manualContent" style="padding: 15px; font-family: sans-serif; color: #333; background: white; width: 170mm; box-sizing: border-box; word-break: break-all; overflow-wrap: break-word;">
-        <h1 style="text-align: center; color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 10px; font-size: 20px;">発注管理システム かんたん操作マニュアル</h1>
-        <p style="font-size: 11px; color: #666; text-align: right; margin-bottom: 15px;">対象者：全スタッフ（保存用）</p>
+    <!-- 修正後のマニュアルコンテンツ（A4サイズ内に綺麗に収まるようパディングやマージンを最適化） -->
+    <div id="manualContent" style="padding: 10px 15px; font-family: sans-serif; color: #333; background: white; width: 180mm; box-sizing: border-box; word-break: break-all; overflow-wrap: break-word;">
+        <h1 style="text-align: center; color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 6px; font-size: 18px; margin-top: 0;">発注管理システム かんたん操作マニュアル</h1>
+        <p style="font-size: 10px; color: #666; text-align: right; margin: 4px 0 10px 0;">対象者：全スタッフ（保存用）</p>
         
-        <h3 style="background: #e7f5ff; padding: 6px 10px; color: #1971c2; font-size: 14px; border-left: 4px solid #1971c2; margin-top: 15px;">1. ログインする</h3>
-        <p style="font-size: 12px; line-height: 1.5; margin: 6px 0 10px 10px;">
+        <h3 style="background: #e7f5ff; padding: 5px 8px; color: #1971c2; font-size: 13px; border-left: 4px solid #1971c2; margin: 10px 0 4px 0;">1. ログインする</h3>
+        <p style="font-size: 11px; line-height: 1.4; margin: 2px 0 8px 8px;">
             画面を開くとパスワード入力画面が出ます。指定されたパスワードを入力し、<b>【ログイン】</b>を押します。
         </p>
 
-        <h3 style="background: #e7f5ff; padding: 6px 10px; color: #1971c2; font-size: 14px; border-left: 4px solid #1971c2; margin-top: 15px;">2. 商品を注文カゴに入れる（発注登録）</h3>
-        <p style="font-size: 12px; line-height: 1.5; margin: 6px 0 10px 10px;">
+        <h3 style="background: #e7f5ff; padding: 5px 8px; color: #1971c2; font-size: 13px; border-left: 4px solid #1971c2; margin: 10px 0 4px 0;">2. 商品を注文カゴに入れる（発注登録）</h3>
+        <p style="font-size: 11px; line-height: 1.4; margin: 2px 0 8px 8px;">
             左側の「発注登録」で<b>商品名</b>を入力します。商品を選ぶと発注先やデフォルト数量が自動入力されます。最後に<b>【発注カゴに追加】</b>を押します。
         </p>
 
-        <h3 style="background: #e7f5ff; padding: 6px 10px; color: #1971c2; font-size: 14px; border-left: 4px solid #1971c2; margin-top: 15px;">3. 注文書を印刷する（発注する）</h3>
-        <p style="font-size: 12px; line-height: 1.5; margin: 6px 0 10px 10px;">
+        <h3 style="background: #e7f5ff; padding: 5px 8px; color: #1971c2; font-size: 13px; border-left: 4px solid #1971c2; margin: 10px 0 4px 0;">3. 注文書を印刷する（発注する）</h3>
+        <p style="font-size: 11px; line-height: 1.4; margin: 2px 0 8px 8px;">
             「信公」は専用の印刷ボタン、「信公以外」はまとめて1枚の用紙に印刷できるようになっています。印刷後に「発注を完了しましたか？」と出ますので、<b>「OK」</b>を押すと履歴に移動します。
         </p>
     </div>
@@ -243,8 +244,7 @@
                 .then(data => {                    
                     if (data.status === "success" && data.items && data.items.length > 0) {                        
                         localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(data.items));                    }                    
-                    renderSystem();                })                
-                .catch(err => {                    
+                    renderSystem();                })                .catch(err => {                    
                     console.error("クラウドからのデータ取得に失敗しました", err);                    
                     renderSystem();                });        
         }
@@ -289,16 +289,16 @@
             const datalist = document.getElementById("masterList");            
             const itemsListDiv = document.getElementById("masterItemsList");            
             datalist.innerHTML = "";            
-            itemsListDiv.innerHTML = "";                                                                
+            itemsListDiv.innerHTML = "";                                                                                                                               
             let keyword = translateHanToZen(document.getElementById("masterSearchInput").value.trim()).toLowerCase();            
-            let products = getProducts();                                                        
+            let products = getProducts();                                                                                                
             let count = 0;            
             products.forEach(p => {                
                 const name = (p.priceTagItemName || p.itemName || "").trim();                
-                if (!name) return;                                                                        
+                if (!name) return;                                                                                                                                     
                 datalist.innerHTML += `<option value="${name}">`;                
                 if (keyword === "" || translateHanToZen(name).toLowerCase().includes(keyword)) {                    
-                    let sellingPriceText = (p.sellingPrice !== undefined && p.sellingPrice !== "") ? Number(p.sellingPrice).toLocaleString() + "円" : "売価未設定";                                                                                                    
+                    let sellingPriceText = (p.sellingPrice !== undefined && p.sellingPrice !== "") ? Number(p.sellingPrice).toLocaleString() + "円" : "売価未設定";                                                                                                                                                                                                                                        
                     let staffPriceVal = (p.staffPrice !== undefined && p.staffPrice !== "") ? p.staffPrice : p.costPrice;
                     let staffPriceText = (staffPriceVal !== undefined && staffPriceVal !== "") ? Number(staffPriceVal).toLocaleString() + "円" : "未設定";
 
@@ -330,7 +330,7 @@
             const container = document.getElementById("printButtons");            
             const section = document.getElementById("printSection");            
             let orders = getOrders();            
-            let wholesalers = new Set();                                    
+            let wholesalers = new Set();                                                                
             orders.forEach(o => {                
                 if (o.wholesaler) wholesalers.add(o.wholesaler);            });
 
@@ -355,7 +355,7 @@
             event.preventDefault();            
             const name = document.getElementById("itemName").value.trim();            
             const wholesaler = document.getElementById("itemWholesaler").value.trim();            
-            const qty = parseInt(document.getElementById("itemQty").value) || 1;                                                                    
+            const qty = parseInt(document.getElementById("itemQty").value) || 1;                                                                                                                                            
             if (!name || !wholesaler) return;
 
             let orders = getOrders();            
@@ -559,7 +559,7 @@
             element.style.display = "block";
             
             const opt = {
-                margin:       15,
+                margin:       10,
                 filename:     '発注管理システム_操作マニュアル.pdf',
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { scale: 2, useCORS: true },
