@@ -340,13 +340,13 @@
                 
                 // 1. 「信公」が含まれている場合の個別ボタン
                 if (wholesalers.has('信公')) {
-                    container.innerHTML += `<div class="wholesaler-actions"><p class="wholesaler-title">◆ 信公</p><button class="btn-print" onclick="printOrder('信公')">信公を印刷する</button></div>`;
+                    container.innerHTML += `<div class="wholesaler-actions"><p class="wholesaler-title">◆ 信公</p><button class="btn-print" onclick="printOrder('信公')">印刷する</button></div>`;
                 }
 
                 // 2. 「信公以外」の卸業者がある場合、1つにまとめた印刷ボタンを表示
                 let otherWholesalers = Array.from(wholesalers).filter(w => w !== '信公');
                 if (otherWholesalers.length > 0) {
-                    container.innerHTML += `<div class="wholesaler-actions" style="background: #e6fcf5; border-color: #96f2d7;"><p class="wholesaler-title" style="color: #0ca678;">◆ 信公以外（まとめ）</p><button class="btn-print" style="background-color: #12b886;" onclick="printOtherOrders()">一括印刷する</button></div>`;
+                    container.innerHTML += `<div class="wholesaler-actions" style="background: #e6fcf5; border-color: #96f2d7;"><p class="wholesaler-title" style="color: #0ca678;">◆ 発注リスト（信公以外）</p><button class="btn-print" style="background-color: #12b886;" onclick="printOtherOrders()">一括印刷する</button></div>`;
                 }
             } else {                
                 section.style.display = "none";            }        }
@@ -466,7 +466,7 @@
                     <div class="print-datetime">印刷日時：${nowStr}</div>
                 </div>
                 <div class="print-header">
-                    <h1>発注一覧表（各卸業者様）</h1>
+                    <h1>発注一覧表</h1>
                 </div>`;
 
             // 発注先ごとに見出しとテーブルを生成
@@ -480,7 +480,7 @@
                 });
 
                 html += `
-                    <div class="print-section-title">■ 発注先：${w} 御中</div>
+                    <div class="print-section-title">■ 発注先：${w} </div>
                     <table class="print-table">
                         <thead>
                             <tr>
