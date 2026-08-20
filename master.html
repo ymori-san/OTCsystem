@@ -136,11 +136,11 @@
 
         <!-- 💡 個別編集エリア -->
         <div id="editArea">
-            <h3 id="editStatusTitle" style="margin-top:0; color:#d9480f; font-size:15px;"></h3>
+            <h3 id="editStatusTitle" style="margin-top: 0; color: #d9480f; font-size: 15px;"></h3>
             
             <div class="edit-form-group">
                 <label>JANコード</label>
-                <input type="text" id="editJan" readonly style="background:#e9ecef;">
+                <input type="text" id="editJan" readonly style="background: #e9ecef;">
             </div>
             
             <!-- ① 基本項目 -->
@@ -152,10 +152,21 @@
                 <label>納入価（仕入れ値・税抜）</label>
                 <input type="number" id="editCost">
             </div>
+
+            <!-- 商品区分（プルダウン ＋ その他用テキスト） -->
             <div class="edit-form-group">
                 <label>商品区分</label>
-                <input type="text" id="editCategory">
+                <select id="editCategorySelect" class="search-box" style="width:100%; padding:8px; margin-bottom:5px;" onchange="handleCategoryChange()">
+                    <option value="一般用医薬品">一般用医薬品</option>
+                    <option value="指定医薬部外品">指定医薬部外品</option>
+                    <option value="化粧品">化粧品</option>
+                    <option value="衛生材料">衛生材料</option>
+                    <option value="食品">食品</option>
+                    <option value="その他">その他（自由入力）</option>
+                </select>
+                <input type="text" id="editCategoryCustom" placeholder="商品区分を直接入力" style="display: none; margin-top: 5px;">
             </div>
+
             <div class="edit-form-group">
                 <label>用途</label>
                 <input type="text" id="editNote">
@@ -166,10 +177,23 @@
 
             <!-- ② 詳細項目（初期は非表示） -->
             <div id="detailFields">
+                <!-- 発注先（プルダウン ＋ その他用テキスト） -->
                 <div class="edit-form-group">
                     <label>発注先</label>
-                    <input type="text" id="editWholesaler">
+                    <select id="editWholesalerSelect" class="search-box" style="width:100%; padding:8px; margin-bottom:5px;" onchange="handleWholesalerChange()">
+                        <option value="ダイコー">ダイコー</option>
+                        <option value="e健康ショップ（東邦）">e健康ショップ（東邦）</option>
+                        <option value="信公">信公</option>
+                        <option value="琉球光和">琉球光和</option>
+                        <option value="沖縄歯科器材">沖縄歯科器材</option>
+                        <option value="沖縄大正製薬">沖縄大正製薬</option>
+                        <option value="佐藤製薬">佐藤製薬</option>
+                        <option value="三和メディカル">三和メディカル</option>
+                        <option value="その他">その他（自由入力）</option>
+                    </select>
+                    <input type="text" id="editWholesalerCustom" placeholder="発注先を直接入力" style="display: none; margin-top: 5px;">
                 </div>
+
                 <div class="edit-form-group">
                     <label>税率 (8 または 10)</label>
                     <input type="number" id="editTax" value="10">
@@ -375,6 +399,31 @@
         }
     }
 
+    // プルダウン「その他」の切り替え制御
+    function handleCategoryChange() {
+        const select = document.getElementById("editCategorySelect");
+        const customInput = document.getElementById("editCategoryCustom");
+        if (select.value === "その他") {
+            customInput.style.display = "block";
+            customInput.focus();
+        } else {
+            customInput.style.display = "none";
+            customInput.value = "";
+        }
+    }
+
+    function handleWholesalerChange() {
+        const select = document.getElementById("editWholesalerSelect");
+        const customInput = document.getElementById("editWholesalerCustom");
+        if (select.value === "その他") {
+            customInput.style.display = "block";
+            customInput.focus();
+        } else {
+            customInput.style.display = "none";
+            customInput.value = "";
+        }
+    }
+
     function handleManualInput(val) {
         const query = val.trim();
         const suggestList = document.getElementById("suggestList");
@@ -441,28 +490,75 @@
         document.getElementById("detailFields").style.display = "none";
         document.getElementById("toggleBtn").innerText = "▼ すべて表示（詳細項目）";
 
+        // 商品区分の設定用
+        const catSelect = document.getElementById("editCategorySelect");
+        const catCustom = document.getElementById("editCategoryCustom");
+
+        // 発注先の設定用
+        const wholesaleSelect = document.getElementById("editWholesalerSelect");
+        const wholesaleCustom = document.getElementById("editWholesalerCustom");
+
         if (item) {
             title.innerText = "✏️ 登録済み商品を発見しました（編集できます）";
             document.getElementById("editItemName").value = item.itemName || "";
             document.getElementById("editCost").value = (item.costPrice !== undefined && item.costPrice !== null) ? item.costPrice : "";
-            document.getElementById("editCategory").value = item.category || "";
             document.getElementById("editNote").value = item.note || "";
-            document.getElementById("editWholesaler").value = item.wholesaler || "";
             document.getElementById("editTax").value = (item.taxRate !== undefined && item.taxRate !== null) ? item.taxRate : 10;
             document.getElementById("editListPrice").value = (item.listPrice !== undefined && item.listPrice !== null) ? item.listPrice : "";
             document.getElementById("editSelling").value = (item.sellingPrice !== undefined && item.sellingPrice !== null) ? item.sellingPrice : "";
             document.getElementById("editDefaultQty").value = (item.defaultQty !== undefined && item.defaultQty !== null) ? item.defaultQty : "";
+
+            // 商品区分の判定・割り当て
+            const itemCat = item.category || "";
+            const catMatched = Array.from(catSelect.options).some(opt => opt.value === itemCat);
+            if (catMatched && itemCat !== "") {
+                catSelect.value = itemCat;
+                catCustom.style.display = "none";
+                catCustom.value = "";
+            } else if (itemCat) {
+                catSelect.value = "その他";
+                catCustom.style.display = "block";
+                catCustom.value = itemCat;
+            } else {
+                catSelect.value = "一般用医薬品";
+                catCustom.style.display = "none";
+                catCustom.value = "";
+            }
+
+            // 発注先の判定・割り当て
+            const itemWholesale = item.wholesaler || "";
+            const wholesaleMatched = Array.from(wholesaleSelect.options).some(opt => opt.value === itemWholesale);
+            if (wholesaleMatched && itemWholesale !== "") {
+                wholesaleSelect.value = itemWholesale;
+                wholesaleCustom.style.display = "none";
+                wholesaleCustom.value = "";
+            } else if (itemWholesale) {
+                wholesaleSelect.value = "その他";
+                wholesaleCustom.style.display = "block";
+                wholesaleCustom.value = itemWholesale;
+            } else {
+                wholesaleSelect.value = "ダイコー";
+                wholesaleCustom.style.display = "none";
+                wholesaleCustom.value = "";
+            }
+
         } else {
             title.innerText = "✨ 未登録の商品です（新規追加できます）";
             document.getElementById("editItemName").value = "";
             document.getElementById("editCost").value = "";
-            document.getElementById("editCategory").value = "";
             document.getElementById("editNote").value = "";
-            document.getElementById("editWholesaler").value = "";
             document.getElementById("editTax").value = 10;
             document.getElementById("editListPrice").value = "";
             document.getElementById("editSelling").value = "";
             document.getElementById("editDefaultQty").value = "";
+
+            catSelect.value = "一般用医薬品";
+            catCustom.style.display = "none";
+            catCustom.value = "";
+
+            wholesaleSelect.value = "ダイコー";
+            wholesaleCustom.style.display = "none";
+            wholesaleCustom.value = "";
         }
 
         editArea.style.display = "block";
@@ -473,9 +569,17 @@
         const jan = document.getElementById("editJan").value;
         const itemName = document.getElementById("editItemName").value.trim();
         const cost = forceNumeric(document.getElementById("editCost").value);
-        const category = document.getElementById("editCategory").value.trim();
+        
+        // 商品区分の取得（「その他」ならカスタム入力欄を見る）
+        const catSelectVal = document.getElementById("editCategorySelect").value;
+        const category = (catSelectVal === "その他") ? document.getElementById("editCategoryCustom").value.trim() : catSelectVal;
+
         const note = document.getElementById("editNote").value.trim();
-        const wholesaler = document.getElementById("editWholesaler").value.trim();
+        
+        // 発注先の取得（「その他」ならカスタム入力欄を見る）
+        const wholesaleSelectVal = document.getElementById("editWholesalerSelect").value;
+        const wholesaler = (wholesaleSelectVal === "その他") ? document.getElementById("editWholesalerCustom").value.trim() : wholesaleSelectVal;
+
         const taxRate = forceNumeric(document.getElementById("editTax").value) === 8 ? 8 : 10;
         const listPrice = forceNumeric(document.getElementById("editListPrice").value);
         const manualSelling = forceNumeric(document.getElementById("editSelling").value);
@@ -613,17 +717,19 @@
     const dropZone = document.getElementById("dropZone");
     const fileInput = document.getElementById("fileInput");
 
-    dropZone.addEventListener("click", () => fileInput.click());
-    dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.classList.add("dragover"); });
-    dropZone.addEventListener("dragleave", () => { dropZone.classList.remove("dragover"); });
-    dropZone.addEventListener("drop", (e) => {
-        e.preventDefault();
-        dropZone.classList.remove("dragover");
-        if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
-    });
-    fileInput.addEventListener("change", (e) => {
-        if (e.target.files.length > 0) handleFile(e.target.files[0]);
-    });
+    if (dropZone && fileInput) {
+        dropZone.addEventListener("click", () => fileInput.click());
+        dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.classList.add("dragover"); });
+        dropZone.addEventListener("dragleave", () => { dropZone.classList.remove("dragover"); });
+        dropZone.addEventListener("drop", (e) => {
+            e.preventDefault();
+            dropZone.classList.remove("dragover");
+            if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener("change", (e) => {
+            if (e.target.files.length > 0) handleFile(e.target.files[0]);
+        });
+    }
 
     function handleFile(file) {
         const reader = new FileReader();
