@@ -195,7 +195,7 @@
         <p style="font-size: 10px; line-height: 1.3; margin: 2px 0 16px 6px;">
             パソコンでシステム画面を開くと、画面全体が暗くなりパスワード入力画面が出ます。<br>
             ① 白い枠の「パスワード」欄をクリックし、決められたパスワードを入力します。<br>
-            ② すぐ下にある青い<b>【ログイン】</b>ボタンをクリックすると、システム画面に入れます。
+            ② すぐ下にある青い<b>【ログイン】</b>ボタンをクリックします（エンターキーでもログインできます）。
         </p>
 
         <h3 style="background: #e7f5ff; padding: 4px 8px; color: #1971c2; font-size: 12px; border-left: 4px solid #1971c2; margin: 8px 0 3px 0;">2. 商品を注文カゴに入れる（発注登録）</h3>
@@ -233,10 +233,11 @@
         const STORAGE_KEY_AUTH = "hatchu_auth_passed";
 
         window.addEventListener("DOMContentLoaded", () => {            
+            const passInput = document.getElementById("passwordInput");
             if (sessionStorage.getItem(STORAGE_KEY_AUTH) === "true") {                
                 unlockSystem();            
             } else {
-                document.getElementById("passwordInput").focus();
+                passInput.focus(); // ログイン画面で確実にカーソルを合わせる
             }        
         });
 
@@ -425,23 +426,31 @@
             let infoDiv = document.getElementById(`info_${id}`);
             let actionsDiv = document.getElementById(`actions_${id}`);
             
-            // 商品情報を保持しつつ、数量部分を入力欄に切り替え
             let orders = getOrders();
             let target = orders.find(o => o.id === id);
             if (!target) return;
 
             infoDiv.innerHTML = `<span>【${target.wholesaler}】 <strong>${target.itemName}</strong></span>`;
             
+            // エンターキー（key === 'Enter'）を押したら自動で「完了」が走るようにイベントを追加
             actionsDiv.innerHTML = `
-                <input type="number" id="qty_${id}" value="${currentQty}" min="1" class="qty-input-small">
+                <input type="number" id="qty_${id}" value="${currentQty}" min="1" class="qty-input-small" onkeydown="handleQtyKeydown(event, ${id})">
                 <button class="btn-update" onclick="updateQuantity(${id})">完了</button>
                 <button class="btn-edit" onclick="displayData()" style="background-color: #adb5bd;">取消</button>
             `;
             document.getElementById(`qty_${id}`).focus();
         }
 
+        function handleQtyKeydown(event, id) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // フォーム送信や予期せぬ挙動を防止
+                updateQuantity(id);
+            }
+        }
+
         function updateQuantity(id) {
             let qtyInput = document.getElementById(`qty_${id}`);
+            if (!qtyInput) return;
             let newQty = parseInt(qtyInput.value);
             if (isNaN(newQty) || newQty < 1) {
                 alert("正しい数量を入力してください。");
