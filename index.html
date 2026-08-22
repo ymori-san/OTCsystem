@@ -31,7 +31,7 @@
         .btn-delete:hover { background-color: #bd2130; }
         .log-section { background-color: #e3fafc; border: 1px solid #c5f6fa; }
         .log-list-container { max-height: 250px; overflow-y: auto; background: white; padding: 10px; border-radius: 4px; border: 1px solid #dee2e6; margin-top: 10px; }
-        .log-item { font-size: 13px; padding: 6px 0; border-bottom: 1px solid #f1f3f5; }
+        .log-item { font-size: 13px; padding: 8px 0; border-bottom: 1px solid #f1f3f5; display: flex; justify-content: space-between; align-items: center; }
         .log-item:last-child { border-bottom: none; }
         .log-date { color: #868e96; font-size: 11px; }
         .master-section { background-color: #fff9db; border: 1px solid #ffe3e3; }
@@ -180,7 +180,7 @@
 
     <div id="printArea"></div>
 
-    <!-- 丁寧な説明にアップデートしたマニュアルコンテンツ（A4サイズ内に綺麗に収まるよう調整） -->
+    <!-- マニュアルコンテンツ -->
     <div id="manualContent" style="padding: 10px 15px; font-family: sans-serif; color: #333; background: white; width: 180mm; box-sizing: border-box; word-break: break-all; overflow-wrap: break-word;">
         <h1 style="text-align: center; color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 6px; font-size: 16px; margin-top: 0;">発注管理システム かんたん操作マニュアル</h1>
         <p style="font-size: 9px; color: #666; text-align: right; margin: 2px 0 6px 0;">対象者：全スタッフ（保存用）</p>
@@ -221,6 +221,8 @@
         window.addEventListener("DOMContentLoaded", () => {            
             if (sessionStorage.getItem(STORAGE_KEY_AUTH) === "true") {                
                 unlockSystem();            
+            } else {
+                document.getElementById("passwordInput").focus();
             }        
         });
 
@@ -234,7 +236,9 @@
                 unlockSystem();            
             } else {                
                 errorMsg.style.display = "block";                
-                document.getElementById("passwordInput").value = "";            }        
+                document.getElementById("passwordInput").value = "";
+                document.getElementById("passwordInput").focus();
+            }        
         }
 
         function unlockSystem() {            
@@ -319,8 +323,9 @@
                                 <span style="color:#333; margin-left:4px;">(職員:${staffPriceText})</span>
                             </div>                        
                         </div>`;                    
-                count++;                
-            }            });            
+                    count++;                
+                }            
+            });            
             document.getElementById("masterCount").innerText = "登録件数：" + count + " 件";        }
 
         function autoFill() {            
@@ -347,12 +352,10 @@
             if (wholesalers.size > 0) {                
                 section.style.display = "block";                
                 
-                // 1. 「信公」が含まれている場合の個別ボタン
                 if (wholesalers.has('信公')) {
                     container.innerHTML += `<div class="wholesaler-actions"><p class="wholesaler-title">◆ 信公</p><button class="btn-print" onclick="printOrder('信公')">印刷する</button></div>`;
                 }
 
-                // 2. 「信公以外」の卸業者がある場合、1つにまとめた印刷ボタンを表示
                 let otherWholesalers = Array.from(wholesalers).filter(w => w !== '信公');
                 if (otherWholesalers.length > 0) {
                     container.innerHTML += `<div class="wholesaler-actions" style="background: #e6fcf5; border-color: #96f2d7;"><p class="wholesaler-title" style="color: #0ca678;">◆ 発注リスト（信公以外）</p><button class="btn-print" style="background-color: #12b886;" onclick="printOtherOrders()">一括印刷する</button></div>`;
@@ -400,7 +403,6 @@
             saveOrders(orders);            
             displayData();        }
 
-        // --- 信公専用の印刷処理 ---
         function printOrder(w) {            
             currentPrintingWholesaler = w;            
             const printArea = document.getElementById("printArea");            
@@ -452,14 +454,12 @@
             window.print();            
             printArea.innerHTML = "";        }
 
-        // --- 信公「以外」をまとめて印刷する処理 ---
         function printOtherOrders() {
-            currentPrintingWholesaler = "OTHERS_BUNDLE"; // 複数まとめた場合の特殊フラグ
+            currentPrintingWholesaler = "OTHERS_BUNDLE"; 
             const printArea = document.getElementById("printArea");
             let orders = getOrders();
             let products = getProducts();
 
-            // 信公以外の注文を抽出し、発注先ごとにグループ化
             let otherOrders = orders.filter(o => o.wholesaler !== '信公');
             let grouped = {};
             otherOrders.forEach(o => {
@@ -478,7 +478,6 @@
                     <h1>発注一覧表</h1>
                 </div>`;
 
-            // 発注先ごとに見出しとテーブルを生成
             for (let w in grouped) {
                 let rows = "";
                 grouped[w].forEach(item => {
@@ -558,7 +557,43 @@
                 list.innerHTML = "<div class='log-item' style='text-align:center; color:#666;'>該当する履歴はありません</div>";                return;            }
 
             filteredLogs.forEach(c => {                
-                list.innerHTML += `<div class="log-item"><span class="log-date">[${c.timestamp}]</span><br>【${c.wholesaler}】 <strong>${c.itemName}</strong> × ${c.quantity}個</div>`;            });        }
+                list.innerHTML += `
+                    <div class="log-item">
+                        <div>
+                            <span class="log-date">[${c.timestamp}]</span><br>
+                            【${c.wholesaler}】 <strong>${c.itemName}</strong> × ${c.quantity}個
+                        </div>
+                        <button class="btn-delete" style="font-size: 11px; padding: 4px 8px; margin: 0; background-color: #e28743;" onclick="cancelLog(${c.id})">キャンセル</button>
+                    </div>`;            
+            });        }
+
+        // --- 履歴から発注待ちリストへ戻す処理 ---
+        function cancelLog(id) {
+            let logs = getLogs();
+            let orders = getOrders();
+
+            let targetIndex = logs.findIndex(l => l.id === id);
+            if (targetIndex === -1) return;
+
+            let itemToRestore = logs[targetIndex];
+
+            if (confirm(`「${itemToRestore.itemName}」を発注待ちリストに戻しますか？`)) {
+                logs.splice(targetIndex, 1);
+                saveLogs(logs);
+
+                orders.push({
+                    id: itemToRestore.id || (Date.now() + Math.random()),
+                    itemName: itemToRestore.itemName,
+                    wholesaler: itemToRestore.wholesaler,
+                    quantity: itemToRestore.quantity,
+                    date: itemToRestore.date || new Date().toLocaleDateString()
+                });
+                saveOrders(orders);
+
+                displayData();
+                displayLogs();
+            }
+        }
 
         function filterMasterList() {            
             updateMasterSuggestList();        }
