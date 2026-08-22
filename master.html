@@ -152,6 +152,10 @@
                 <label>納入価（仕入れ値・税抜）</label>
                 <input type="number" id="editCost">
             </div>
+            <div class="edit-form-group">
+                <label>定期発注数</label>
+                <input type="number" id="editDefaultQty" placeholder="0">
+            </div>
 
             <!-- 商品区分（プルダウン ＋ その他用テキスト） -->
             <div class="edit-form-group">
@@ -169,17 +173,17 @@
                 <input type="text" id="editCategoryCustom" placeholder="商品区分を直接入力" style="display: none; margin-top: 5px;">
             </div>
 
-            <div class="edit-form-group">
-                <label>用途</label>
-                <input type="text" id="editNote">
-            </div>
-
             <!-- すべて表示ボタン -->
             <button type="button" class="btn-toggle" id="toggleBtn" onclick="toggleDetails()">▼ すべて表示（詳細項目）</button>
 
             <!-- ② 詳細項目（初期は非表示） -->
             <div id="detailFields">
                 <!-- 発注先（プルダウン ＋ その他用テキスト） -->
+                <div class="edit-form-group">
+                    <label>用途</label>
+                    <input type="text" id="editNote">
+                </div>
+
                 <div class="edit-form-group">
                     <label>発注先</label>
                     <select id="editWholesalerSelect" class="search-box" style="width:100%; padding:8px; margin-bottom:5px;" onchange="handleWholesalerChange()">
@@ -210,10 +214,6 @@
                 <div class="edit-form-group">
                     <label>売価（手動上書き用・空欄なら自動計算）</label>
                     <input type="number" id="editSelling" placeholder="自動計算">
-                </div>
-                <div class="edit-form-group">
-                    <label>定期発注数</label>
-                    <input type="number" id="editDefaultQty" placeholder="0">
                 </div>
             </div>
 
