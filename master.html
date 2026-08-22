@@ -264,11 +264,19 @@
             loadMasterData();
         } else {
             document.getElementById("authError").style.display = "block";
+            // ❌間違っていた時にもう一度カーソルを合わせる
+            document.getElementById("passwordInput").value = "";
+            document.getElementById("passwordInput").focus();
         }
     }
 
     document.getElementById("passwordInput").addEventListener("keypress", (e) => {
         if (e.key === "Enter") checkPassword();
+    });
+
+    // 🚀 ページを読み込んだ（更新した）ときに、自動でパスワード入力欄にカーソルを合わせる
+    window.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("passwordInput").focus();
     });
 
     function loadMasterData() {
