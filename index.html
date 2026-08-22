@@ -29,8 +29,10 @@
         .item-info { display: flex; flex-direction: column; flex-grow: 1; }
         .item-actions { display: flex; align-items: center; gap: 5px; }
         .qty-input-small { width: 50px !important; padding: 4px !important; font-size: 14px !important; text-align: center; }
-        .btn-update { background-color: #17a2b8; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin: 0; }
-        .btn-update:hover { background-color: #138496; }
+        .btn-edit { background-color: #6c757d; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin: 0; }
+        .btn-edit:hover { background-color: #5a6268; }
+        .btn-update { background-color: #28a745; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin: 0; }
+        .btn-update:hover { background-color: #218838; }
         .btn-delete { background-color: #dc3545; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin: 0; }
         .btn-delete:hover { background-color: #bd2130; }
         .log-section { background-color: #e3fafc; border: 1px solid #c5f6fa; }
@@ -218,7 +220,7 @@
             うっかり「発注完了」の確認でOKを押してしまったり、注文をやり直したいときは以下の手順で元に戻せます。<br>
             ① 画面右側の「最近の発注（履歴）」欄を確認します。<br>
             ② やり直したい商品の右側にあるオレンジ色の<b>【キャンセル】</b>ボタンをクリックします。<br>
-            ③ 「発注待ちリストに戻しますか？」と確認が出るので<b><b>【OK】</b></b>を押すと、商品が左側の発注待ちリストに再度戻ります。
+            ③ 「発注待ちリストに戻しますか？」と確認が出るので<b>【OK】</b>を押すと、商品が左側の発注待ちリストに再度戻ります。
         </p>
     </div>
 
@@ -407,16 +409,36 @@
                 orderList.innerHTML = "<li style='justify-content: center; color: #666;'>発注待ちの商品はありません</li>";            } else {                
                 orders.forEach(c => {                    
                     orderList.innerHTML += `
-                        <li>
-                            <div class="item-info"><span>【${c.wholesaler}】 <strong>${c.itemName}</strong></span></div>
-                            <div class="item-actions">
-                                <input type="number" id="qty_${c.id}" value="${c.quantity}" min="1" class="qty-input-small">
-                                <button class="btn-update" onclick="updateQuantity(${c.id})">変更</button>
+                        <li id="row_${c.id}">
+                            <div class="item-info" id="info_${c.id}">
+                                <span>【${c.wholesaler}】 <strong>${c.itemName}</strong> × <strong>${c.quantity}</strong>個</span>
+                            </div>
+                            <div class="item-actions" id="actions_${c.id}">
+                                <button class="btn-edit" onclick="enableEdit(${c.id}, ${c.quantity})">変更</button>
                                 <button class="btn-delete" onclick="deleteData(${c.id})">削除</button>
                             </div>
                         </li>`;                
                 });            }            
             updatePrintButtons();        }
+
+        function enableEdit(id, currentQty) {
+            let infoDiv = document.getElementById(`info_${id}`);
+            let actionsDiv = document.getElementById(`actions_${id}`);
+            
+            // 商品情報を保持しつつ、数量部分を入力欄に切り替え
+            let orders = getOrders();
+            let target = orders.find(o => o.id === id);
+            if (!target) return;
+
+            infoDiv.innerHTML = `<span>【${target.wholesaler}】 <strong>${target.itemName}</strong></span>`;
+            
+            actionsDiv.innerHTML = `
+                <input type="number" id="qty_${id}" value="${currentQty}" min="1" class="qty-input-small">
+                <button class="btn-update" onclick="updateQuantity(${id})">完了</button>
+                <button class="btn-edit" onclick="displayData()" style="background-color: #adb5bd;">取消</button>
+            `;
+            document.getElementById(`qty_${id}`).focus();
+        }
 
         function updateQuantity(id) {
             let qtyInput = document.getElementById(`qty_${id}`);
