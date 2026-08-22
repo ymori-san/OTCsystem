@@ -25,9 +25,13 @@
         .btn-print:hover { background-color: #218838; }
         h2 { margin-top: 20px; border-bottom: 2px solid #007bff; padding-bottom: 5px; font-size: 18px; }
         ul { list-style: none; padding: 0; }
-        li { background: #eee; margin-bottom: 5px; padding: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
-        .item-info { display: flex; flex-direction: column; }
-        .btn-delete { background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; width: auto; font-size: 14px; margin: 0; }
+        li { background: #eee; margin-bottom: 5px; padding: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .item-info { display: flex; flex-direction: column; flex-grow: 1; }
+        .item-actions { display: flex; align-items: center; gap: 5px; }
+        .qty-input-small { width: 50px !important; padding: 4px !important; font-size: 14px !important; text-align: center; }
+        .btn-update { background-color: #17a2b8; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin: 0; }
+        .btn-update:hover { background-color: #138496; }
+        .btn-delete { background-color: #dc3545; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin: 0; }
         .btn-delete:hover { background-color: #bd2130; }
         .log-section { background-color: #e3fafc; border: 1px solid #c5f6fa; }
         .log-list-container { max-height: 250px; overflow-y: auto; background: white; padding: 10px; border-radius: 4px; border: 1px solid #dee2e6; margin-top: 10px; }
@@ -186,27 +190,35 @@
         <p style="font-size: 9px; color: #666; text-align: right; margin: 2px 0 6px 0;">対象者：全スタッフ（保存用）</p>
         
         <h3 style="background: #e7f5ff; padding: 4px 8px; color: #1971c2; font-size: 12px; border-left: 4px solid #1971c2; margin: 8px 0 3px 0;">1. システムにログインする</h3>
-        <p style="font-size: 10px; line-height: 1.3; margin: 2px 0 6px 6px;">
+        <p style="font-size: 10px; line-height: 1.3; margin: 2px 0 16px 6px;">
             パソコンでシステム画面を開くと、画面全体が暗くなりパスワード入力画面が出ます。<br>
             ① 白い枠の「パスワード」欄をクリックし、決められたパスワードを入力します。<br>
-            ② すぐ下にある青い<b>【ログイン】</b>ボタンをクリックすると、システム画面に入れるようになります。
+            ② すぐ下にある青い<b>【ログイン】</b>ボタンをクリックすると、システム画面に入れます。
         </p>
 
         <h3 style="background: #e7f5ff; padding: 4px 8px; color: #1971c2; font-size: 12px; border-left: 4px solid #1971c2; margin: 8px 0 3px 0;">2. 商品を注文カゴに入れる（発注登録）</h3>
-        <p style="font-size: 10px; line-height: 1.3; margin: 2px 0 6px 6px;">
+        <p style="font-size: 10px; line-height: 1.3; margin: 2px 0 16px 6px;">
             発注したい商品がある時は、画面左側にある「発注登録」の欄を使います。<br>
             ① <b>商品名</b>の欄に、注文したい商品の名前を入力します（文字を入力すると下に候補が出てくるので、クリックして選ぶと間違いがありません）。<br>
-            ② 商品を選ぶと、「発注先」や「数量」が自動で入ります。数量を変えたい場合はここで数字を修正します。<br>
+            ② 商品を選ぶと、「発注先」や「発注数量」が自動で入ります。数量を変えたい場合はここで数字を修正します。<br>
             ③ 最後に青い<b>【発注カゴに追加】</b>ボタンを押すと、下の「現在の発注待ちリスト」に商品が追加されます。
         </p>
 
         <h3 style="background: #e7f5ff; padding: 4px 8px; color: #1971c2; font-size: 12px; border-left: 4px solid #1971c2; margin: 8px 0 3px 0;">3. 注文書を印刷して発注を完了する</h3>
-        <p style="font-size: 10px; line-height: 1.3; margin: 2px 0 6px 6px;">
+        <p style="font-size: 10px; line-height: 1.3; margin: 2px 0 16px 6px;">
             注文したい商品をカゴに入れると、「発注内容の印刷」ボタンが出てきます。すべてカゴに入れたら、印刷します。<br>
             ① <b>「信公」</b>への注文は専用のボタン、<b>「信公以外」</b>の卸業者への注文は「一括印刷する」ボタンを押してそのまま印刷してください。<br>
             ② 印刷したあと画面に「発注を完了しましたか？」と確認が出るので、必ず<b>「OK」</b>を押してください。<br>
             ③ もし間違えて印刷ボタンを押してしまった場合はキャンセルを押すと元のページに戻ります。「発注を完了しましたか？」という確認にも<b>「キャンセル」</b>を押してください。<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;※最後の確認で「OK」を押すと注文が完了扱いになり、カゴから消えて右側の「最近の発注（履歴）」に移動します。
+            &nbsp;&nbsp;&nbsp;&nbsp;※印刷後の確認で「OK」を押すと注文完了扱いになり、商品がカゴから消えて右上の「最近の発注（履歴）」に移動します。
+        </p>
+
+        <h3 style="background: #e7f5ff; padding: 4px 8px; color: #1971c2; font-size: 12px; border-left: 4px solid #1971c2; margin: 8px 0 3px 0;">4. 誤発注をキャンセルする</h3>
+        <p style="font-size: 10px; line-height: 1.3; margin: 2px 0 16px 6px;">
+            うっかり「発注完了」の確認でOKを押してしまったり、注文をやり直したいときは以下の手順で元に戻せます。<br>
+            ① 画面右側の「最近の発注（履歴）」欄を確認します。<br>
+            ② やり直したい商品の右側にあるオレンジ色の<b>【キャンセル】</b>ボタンをクリックします。<br>
+            ③ 「発注待ちリストに戻しますか？」と確認が出るので<b><b>【OK】</b></b>を押すと、商品が左側の発注待ちリストに再度戻ります。
         </p>
     </div>
 
@@ -394,8 +406,34 @@
             if (orders.length === 0) {                
                 orderList.innerHTML = "<li style='justify-content: center; color: #666;'>発注待ちの商品はありません</li>";            } else {                
                 orders.forEach(c => {                    
-                    orderList.innerHTML += `<li><div class="item-info"><span>【${c.wholesaler}】 <strong>${c.itemName}</strong> × ${c.quantity}個</span></div><button class="btn-delete" onclick="deleteData(${c.id})">削除</button></li>`;                });            }            
+                    orderList.innerHTML += `
+                        <li>
+                            <div class="item-info"><span>【${c.wholesaler}】 <strong>${c.itemName}</strong></span></div>
+                            <div class="item-actions">
+                                <input type="number" id="qty_${c.id}" value="${c.quantity}" min="1" class="qty-input-small">
+                                <button class="btn-update" onclick="updateQuantity(${c.id})">変更</button>
+                                <button class="btn-delete" onclick="deleteData(${c.id})">削除</button>
+                            </div>
+                        </li>`;                
+                });            }            
             updatePrintButtons();        }
+
+        function updateQuantity(id) {
+            let qtyInput = document.getElementById(`qty_${id}`);
+            let newQty = parseInt(qtyInput.value);
+            if (isNaN(newQty) || newQty < 1) {
+                alert("正しい数量を入力してください。");
+                return;
+            }
+
+            let orders = getOrders();
+            let target = orders.find(o => o.id === id);
+            if (target) {
+                target.quantity = newQty;
+                saveOrders(orders);
+                displayData();
+            }
+        }
 
         function deleteData(id) {            
             let orders = getOrders();            
@@ -567,7 +605,6 @@
                     </div>`;            
             });        }
 
-        // --- 履歴から発注待ちリストへ戻す処理 ---
         function cancelLog(id) {
             let logs = getLogs();
             let orders = getOrders();
