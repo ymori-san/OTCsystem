@@ -35,9 +35,14 @@
         .btn-update:hover { background-color: #218838; }
         .btn-delete { background-color: #dc3545; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin: 0; }
         .btn-delete:hover { background-color: #bd2130; }
+        
+        /* キャンセルボタン用クラス（サイズ・幅を統一してコンパクトに） */
+        .btn-cancel-log { background-color: #e28743; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin: 0; width: auto; white-space: nowrap; }
+        .btn-cancel-log:hover { background-color: #cf7735; }
+
         .log-section { background-color: #e3fafc; border: 1px solid #c5f6fa; }
         .log-list-container { max-height: 250px; overflow-y: auto; background: white; padding: 10px; border-radius: 4px; border: 1px solid #dee2e6; margin-top: 10px; }
-        .log-item { font-size: 13px; padding: 8px 0; border-bottom: 1px solid #f1f3f5; display: flex; justify-content: space-between; align-items: center; }
+        .log-item { font-size: 13px; padding: 8px 0; border-bottom: 1px solid #f1f3f5; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
         .log-item:last-child { border-bottom: none; }
         .log-date { color: #868e96; font-size: 11px; }
         .master-section { background-color: #fff9db; border: 1px solid #ffe3e3; }
@@ -237,7 +242,7 @@
             if (sessionStorage.getItem(STORAGE_KEY_AUTH) === "true") {                
                 unlockSystem();            
             } else {
-                passInput.focus(); // ログイン画面で確実にカーソルを合わせる
+                passInput.focus();
             }        
         });
 
@@ -432,7 +437,6 @@
 
             infoDiv.innerHTML = `<span>【${target.wholesaler}】 <strong>${target.itemName}</strong></span>`;
             
-            // エンターキー（key === 'Enter'）を押したら自動で「完了」が走るようにイベントを追加
             actionsDiv.innerHTML = `
                 <input type="number" id="qty_${id}" value="${currentQty}" min="1" class="qty-input-small" onkeydown="handleQtyKeydown(event, ${id})">
                 <button class="btn-update" onclick="updateQuantity(${id})">完了</button>
@@ -443,7 +447,7 @@
 
         function handleQtyKeydown(event, id) {
             if (event.key === 'Enter') {
-                event.preventDefault(); // フォーム送信や予期せぬ挙動を防止
+                event.preventDefault();
                 updateQuantity(id);
             }
         }
@@ -632,7 +636,7 @@
                             <span class="log-date">[${c.timestamp}]</span><br>
                             【${c.wholesaler}】 <strong>${c.itemName}</strong> × ${c.quantity}個
                         </div>
-                        <button class="btn-delete" style="font-size: 11px; padding: 4px 8px; margin: 0; background-color: #e28743;" onclick="cancelLog(${c.id})">キャンセル</button>
+                        <button class="btn-cancel-log" onclick="cancelLog(${c.id})">キャンセル</button>
                     </div>`;            
             });        }
 
