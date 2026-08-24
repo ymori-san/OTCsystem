@@ -76,8 +76,32 @@
         .tag.wholesaler-toho .color-bar { background-color: #ffa500; }
         .tag.wholesaler-shinko .color-bar { background-color: #28a745; }
         .tag.wholesaler-other .color-bar { background-color: #6c757d; }
-        .delete-btn { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 15; }
-        .delete-btn:hover { background: rgba(0,0,0,0.8); }
+        
+        /* 💡【変更点】通常時は透明にして非表示、マウスホバー時だけ表示する設定 */
+        .delete-btn { 
+            position: absolute; 
+            top: 4px; 
+            right: 4px; 
+            background: rgba(0,0,0,0.6); 
+            color: white; 
+            border: none; 
+            border-radius: 50%; 
+            width: 18px; 
+            height: 18px; 
+            font-size: 9px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 15; 
+            opacity: 0;                  /* 最初は透明 */
+            transition: opacity 0.2s ease; /* ふわっと表示させるエフェクト */
+        }
+        .tag:hover .delete-btn { 
+            opacity: 1;                  /* マウスが乗ったときだけ表示 */
+        }
+        .delete-btn:hover { background: rgba(0,0,0,0.9); }
+
         @media print {
             .no-print { display: none; }
             body { background: white; margin: 0; }
@@ -121,7 +145,6 @@
                 return;
             }
 
-            // 💡【変更点】URL末尾に現在ミリ秒(_t=...)を付与してブラウザキャッシュを完全回避
             const cacheBusterUrl = GAS_API_URL + (GAS_API_URL.includes('?') ? '&' : '?') + '_t=' + new Date().getTime();
 
             fetch(cacheBusterUrl)
