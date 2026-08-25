@@ -8,20 +8,20 @@
         body { font-family: sans-serif; margin: 20px; background: #f0f0f0; }
         .no-print { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         
-        /* 💡 全体ブラー（ローディングオーバーレイ）のスタイル */
+        /* 全体ブラー（ローディングオーバーレイ）のスタイル */
         #loadingOverlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(255, 255, 255, 0.6); /* 半透明の白背景 */
-            backdrop-filter: blur(5px);             /* 背景をぼかす効果 */
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(5px);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 9999;                         /* 最も手前に表示 */
+            z-index: 9999;
             transition: opacity 0.3s ease;         
         }
         .loading-box {
@@ -107,33 +107,33 @@
         .tag.wholesaler-shinko .color-bar { background-color: #28a745; }
         .tag.wholesaler-other .color-bar { background-color: #6c757d; }
         
-        /* 💡【変更点】値札中央にでっかく配置し、押しやすくした削除ボタン */
+        /* 値札中央にでっかく配置し、押しやすくした削除ボタン */
         .delete-btn { 
             position: absolute; 
             top: 50%; 
             left: 50%; 
-            transform: translate(-50%, -50%); /* 完全に中央に配置 */
-            background: rgba(0, 0, 0, 0.75);   /* 少し濃い目の半透明黒 */
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.75);
             color: white; 
-            border: 2px solid white;           /* 白い枠線をつけて目立たせる */
-            border-radius: 8px;                /* 角丸四角形に変更 */
-            width: 60px;                       /* 大きめの幅 */
-            height: 40px;                      /* 大きめの高さ */
-            font-size: 22px;                   /* 文字を大きく */
+            border: 2px solid white;
+            border-radius: 8px;
+            width: 60px;
+            height: 40px;
+            font-size: 22px;
             font-weight: bold;
             cursor: pointer; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
             z-index: 15; 
-            opacity: 0;                        /* 最初は透明 */
+            opacity: 0;
             transition: opacity 0.2s ease, background 0.2s ease; 
         }
         .tag:hover .delete-btn { 
-            opacity: 1;                        /* マウスが乗ったときだけ表示 */
+            opacity: 1;
         }
         .delete-btn:hover { 
-            background: rgba(220, 53, 69, 0.9); /* ホバー時は赤色にして警告感を出す */
+            background: rgba(220, 53, 69, 0.9);
         }
 
         @media print {
@@ -146,7 +146,7 @@
     </style>
 </head>
 <body>
-    <!-- 💡 全体を覆うローディング用のレイヤー -->
+    <!-- 全体を覆うローディング用のレイヤー -->
     <div id="loadingOverlay">
         <div class="loading-box">
             <span id="loadingMsg">🔄 データベース反映中...</span>
@@ -154,6 +154,7 @@
     </div>
 
     <div class="no-print">
+        <!-- 💡 エンターキー検知用に関数またはkeydownイベントを追加 -->
         <input type="text" id="nameSearch" placeholder="商品名またはJANで検索" list="masterList" style="width: 250px; padding: 5px;">
         <datalist id="masterList"></datalist>
         
@@ -173,6 +174,15 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             fetchMasterFromCloud();
+
+            // 💡 検索ボックスでエンターキーが押されたら addTags() を実行する設定
+            const nameInput = document.getElementById('nameSearch');
+            nameInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // デフォルトの挙動を抑制
+                    addTags();
+                }
+            });
         });
 
         function fetchMasterFromCloud() {
@@ -219,13 +229,16 @@
                 }
             }
 
-            // 💡 読み込み完了時にブラーのオーバーレイを非表示にする
+            // 読み込み完了時にブラーのオーバーレイを非表示にする
             const loadingOverlay = document.getElementById("loadingOverlay");
             if (loadingOverlay) {
                 loadingOverlay.style.display = "none";
             }
 
             checkUrlParamAndAdd();
+
+            // 💡 ページ読み込み完了時に検索ボックスに自動でカーソルを合わせる
+            document.getElementById('nameSearch').focus();
         }
 
         function checkUrlParamAndAdd() {
@@ -249,6 +262,7 @@
 
             if (!targetQuery) {
                 alert("商品名またはJANコードを選択・入力してください。");
+                nameInput.focus(); // エラー時もフォーカスを戻す
                 return;
             }
 
@@ -265,6 +279,7 @@
 
             if (matchedItems.length === 0) {
                 alert("指定された商品が見つかりませんでした: " + targetQuery);
+                nameInput.focus();
                 return;
             }
 
@@ -274,6 +289,8 @@
 
             nameInput.value = "";
             qtyInput.value = "1";
+            
+            // 💡 値札追加ボタンを押したあとに検索ボックスへ自動的にフォーカスを戻す
             nameInput.focus();
         }
 
