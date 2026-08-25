@@ -40,8 +40,39 @@
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
         .tag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 204mm; max-width: 100%; box-sizing: border-box; }
-        .tag { border: 1px solid #000; background: white; padding: 0; height: 160px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; overflow: hidden; position: relative; width: 100%; }
-        .upper-section { background-color: #28a745; padding: 10px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; flex-grow: 1; width: 100%; box-sizing: border-box; position: relative; }
+        
+        /* 💡 ドラッグ対応のためのスタイル追加 */
+        .tag { 
+            border: 1px solid #000; 
+            background: white; 
+            padding: 0; 
+            height: 160px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            box-sizing: border-box; 
+            overflow: hidden; 
+            position: relative; 
+            width: 100%; 
+            cursor: grab; /* つかめるカーソルにする */
+            user-select: none;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .tag:active { cursor: grabbing; }
+        
+        /* ドラッグ中の見た目（半透明にする） */
+        .tag.dragging {
+            opacity: 0.4;
+            transform: scale(0.95);
+        }
+        
+        /* ドラッグオーバーされたときのガイド（枠線を太く青くする） */
+        .tag.drag-over {
+            border: 2px dashed #007bff;
+            background: #eef6ff;
+        }
+
+        .upper-section { background-color: #28a745; padding: 10px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; flex-grow: 1; width: 100%; box-sizing: border-box; position: relative; pointer-events: none; } /* ドラッグの邪魔にならないようポインター無効化 */
         .upper-section.tax-blue,
         .upper-section.category-blue { background-color: #31869B; }
         .category-badge {
@@ -97,11 +128,11 @@
             width: 100%;
             box-sizing: border-box;
         }
-        .lower-section { background: white; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; height: 55px; border-top: 1px solid #000; box-sizing: border-box; }
+        .lower-section { background: white; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; height: 55px; border-top: 1px solid #000; box-sizing: border-box; pointer-events: none; }
         .barcode-area { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 55%; }
         .barcode { width: 100%; height: 24px; }
         .price-box { color: red; font-weight: bold; font-size: 24px; line-height: 1; text-align: right; }
-        .color-bar { width: 100%; height: 6px; }
+        .color-bar { width: 100%; height: 6px; pointer-events: none; }
         .tag.wholesaler-daiko .color-bar { background-color: #ff69b4; }
         .tag.wholesaler-toho .color-bar { background-color: #ffa500; }
         .tag.wholesaler-shinko .color-bar { background-color: #28a745; }
@@ -139,7 +170,7 @@
         @media print {
             .no-print { display: none; }
             body { background: white; margin: 0; }
-            .tag { border: 1px solid #000; }
+            .tag { border: 1px solid #000; cursor: default; }
             .upper-section, .upper-section.tax-blue, .upper-section.category-blue, .desc-divider, .color-bar, .category-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .delete-btn { display: none !important; }
         }
@@ -154,7 +185,6 @@
     </div>
 
     <div class="no-print">
-        <!-- 💡 エンターキー検知用に関数またはkeydownイベントを追加 -->
         <input type="text" id="nameSearch" placeholder="商品名またはJANで検索" list="masterList" style="width: 250px; padding: 5px;">
         <datalist id="masterList"></datalist>
         
@@ -175,11 +205,10 @@
         window.addEventListener('DOMContentLoaded', () => {
             fetchMasterFromCloud();
 
-            // 💡 検索ボックスでエンターキーが押されたら addTags() を実行する設定
             const nameInput = document.getElementById('nameSearch');
             nameInput.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter') {
-                    event.preventDefault(); // デフォルトの挙動を抑制
+                    event.preventDefault();
                     addTags();
                 }
             });
@@ -229,15 +258,12 @@
                 }
             }
 
-            // 読み込み完了時にブラーのオーバーレイを非表示にする
             const loadingOverlay = document.getElementById("loadingOverlay");
             if (loadingOverlay) {
                 loadingOverlay.style.display = "none";
             }
 
             checkUrlParamAndAdd();
-
-            // 💡 ページ読み込み完了時に検索ボックスに自動でカーソルを合わせる
             document.getElementById('nameSearch').focus();
         }
 
@@ -262,7 +288,7 @@
 
             if (!targetQuery) {
                 alert("商品名またはJANコードを選択・入力してください。");
-                nameInput.focus(); // エラー時もフォーカスを戻す
+                nameInput.focus();
                 return;
             }
 
@@ -289,8 +315,6 @@
 
             nameInput.value = "";
             qtyInput.value = "1";
-            
-            // 💡 値札追加ボタンを押したあとに検索ボックスへ自動的にフォーカスを戻す
             nameInput.focus();
         }
 
@@ -300,6 +324,14 @@
             for (let i = 0; i < qty; i++) {
                 const div = document.createElement('div');
                 div.className = 'tag';
+                div.setAttribute('draggable', 'true'); // 💡 ドラッグ可能に設定
+
+                // 💡 ドラッグ＆ドロップのイベント設定
+                div.addEventListener('dragstart', handleDragStart);
+                div.addEventListener('dragend', handleDragEnd);
+                div.addEventListener('dragover', handleDragOver);
+                div.addEventListener('dragleave', handleDragLeave);
+                div.addEventListener('drop', handleDrop);
 
                 const w = (item.wholesaler || "").trim();
                 if (w.includes("ダイコー")) {
@@ -373,6 +405,51 @@
                     });
                 } catch(err) {
                     console.error("バーコード生成エラー:", err);
+                }
+            }
+        }
+
+        // 💡 ドラッグ＆ドロップを制御する関数群
+        let draggedItem = null;
+
+        function handleDragStart(e) {
+            draggedItem = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            document.querySelectorAll('.tag').forEach(tag => tag.classList.remove('drag-over'));
+            draggedItem = null;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (this !== draggedItem) {
+                this.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+
+            if (draggedItem !== this) {
+                const container = document.getElementById('tagContainer');
+                const allTags = Array.from(container.querySelectorAll('.tag'));
+                const draggedIdx = allTags.indexOf(draggedItem);
+                const targetIdx = allTags.indexOf(this);
+
+                if (draggedIdx < targetIdx) {
+                    container.insertBefore(draggedItem, this.nextSibling);
+                } else {
+                    container.insertBefore(draggedItem, this);
                 }
             }
         }
