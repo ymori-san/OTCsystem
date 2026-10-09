@@ -176,8 +176,8 @@
                     <h2>登録済み商品</h2>
                 </div>
                 <div class="master-action-buttons">
-                    <a href="master.html" target="_blank" class="btn-open-tab">商品情報一覧・登録 ↗</a>
-                    <a href="tags.html" target="_blank" class="btn-open-tab btn-tag-tab">値札を作る ↗</a>
+                    <a href="master.html" target="_blank" class="btn-open-tab" id="btnMasterRegister">商品情報一覧・登録 ↗</a>
+                    <a href="tags.html" target="_blank" class="btn-open-tab btn-tag-tab" id="btnMakeTag">値札を作る ↗</a>
                 </div>
 
                 <button class="btn-pdf-manual" onclick="downloadManualPDF()">📖 操作マニュアルをPDFで保存</button>
@@ -254,6 +254,45 @@
             }        
         });
 
+        // キーボードショートカット設定
+        window.addEventListener("keydown", (e) => {
+            // ログイン画面表示中やダイアログ表示中などは除外するため、メイン画面のロック解除状態をチェック
+            const authOverlay = document.getElementById("authOverlay");
+            if (authOverlay && authOverlay.style.display !== "none") return;
+
+            // 入力フォーム(inputやtextarea)にフォーカスがある状態で単独のキーが暴発するのを防ぎつつ、
+            // 「Shift」キーとの組み合わせなら機能するようにする
+            if (e.shiftKey) {
+                const key = e.key.toLowerCase();
+                
+                // Shift + A : 発注登録の商品名にカーソルを合わせる
+                if (key === 'a') {
+                    const itemNameInput = document.getElementById("itemName");
+                    if (itemNameInput) {
+                        e.preventDefault();
+                        itemNameInput.focus();
+                        itemNameInput.select();
+                    }
+                }
+                // Shift + M : 「商品情報一覧・登録」ボタン（リンク）を押す
+                else if (key === 'm') {
+                    const btn = document.getElementById("btnMasterRegister");
+                    if (btn) {
+                        e.preventDefault();
+                        btn.click(); // または window.open(btn.href, '_blank');
+                    }
+                }
+                // Shift + P : 「値札を作る」ボタン（リンク）を押す
+                else if (key === 'p') {
+                    const btn = document.getElementById("btnMakeTag");
+                    if (btn) {
+                        e.preventDefault();
+                        btn.click(); // または window.open(btn.href, '_blank');
+                    }
+                }
+            }
+        });
+
         function checkPassword(event) {            
             event.preventDefault();            
             const inputVal = document.getElementById("passwordInput").value;            
@@ -301,8 +340,7 @@
         function renderSystem() {            
             displayData();            
             updateMasterSuggestList();            
-            displayLogs();        
-        }
+            displayLogs();        }
 
         function initStorageData() {            
             if (!localStorage.getItem(STORAGE_KEY_PRODUCTS)) {                
