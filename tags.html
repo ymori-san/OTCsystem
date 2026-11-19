@@ -204,7 +204,7 @@
             background-color: #000000;
         }
 
-        /* 下部：左にバーコード、右に赤太字価格＋太字「円」 */
+        /* 下部：左にバーコード（約1.5倍幅）、右に赤太字価格＋太字「円」 */
         .matsuo-bottom {
             width: 100%;
             display: flex;
@@ -215,7 +215,8 @@
             pointer-events: none;
         }
         .matsuo-barcode-area {
-            width: 38%;
+            width: 57%;
+            flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: flex-start;
@@ -225,23 +226,25 @@
             height: 28px;
         }
         .matsuo-price-area {
-            flex-grow: 1;
+            flex: 1;
+            min-width: 0;
             display: flex;
             align-items: baseline;
             justify-content: flex-end;
-            gap: 3px;
+            gap: 2px;
             line-height: 1;
+            white-space: nowrap;
         }
         .matsuo-price-num {
             color: #ff0000;
             font-weight: bold;
-            font-size: 28px;
+            font-size: 23px;
             letter-spacing: -0.5px;
         }
         .matsuo-price-yen {
             color: #111111;
             font-weight: bold;
-            font-size: 15px;
+            font-size: 14px;
         }
 
         /* 値札中央にでっかく配置し、押しやすくした削除ボタン */
@@ -564,7 +567,7 @@
                     JsBarcode(matsuoSvg, codeStr, { 
                         format: "code128", 
                         displayValue: false, 
-                        width: 1.8, 
+                        width: 2.0, 
                         height: 28,
                         margin: 0
                     });
