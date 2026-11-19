@@ -8,6 +8,13 @@
         body { font-family: sans-serif; margin: 20px; background: #f0f0f0; }
         .no-print { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         
+        /* デザイン切替ボタン */
+        .design-switch-group { display: inline-flex; gap: 6px; align-items: center; background: #f4f6f9; padding: 4px 8px; border-radius: 6px; border: 1px solid #ddd; }
+        .design-switch-label { font-size: 13px; font-weight: bold; color: #333; margin-right: 2px; }
+        .design-btn { padding: 6px 12px; cursor: pointer; border: 1px solid #007bff; background: white; color: #007bff; border-radius: 4px; font-weight: bold; transition: all 0.15s ease; }
+        .design-btn:hover { background: #eef6ff; }
+        .design-btn.active { background: #007bff; color: white; }
+
         /* 全体ブラー（ローディングオーバーレイ）のスタイル */
         #loadingOverlay {
             position: fixed;
@@ -41,7 +48,7 @@
 
         .tag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 204mm; max-width: 100%; box-sizing: border-box; }
         
-        /* 💡 ドラッグ対応のためのスタイル追加 */
+        /* ドラッグ対応のためのスタイル */
         .tag { 
             border: 1px solid #000; 
             background: white; 
@@ -54,28 +61,25 @@
             overflow: hidden; 
             position: relative; 
             width: 100%; 
-            cursor: grab; /* つかめるカーソルにする */
+            cursor: grab;
             user-select: none;
             transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
         .tag:active { cursor: grabbing; }
-        
-        /* ドラッグ中の見た目（半透明にする） */
-        .tag.dragging {
-            opacity: 0.4;
-            transform: scale(0.95);
-        }
-        
-        /* ドラッグオーバーされたときのガイド（枠線を太く青くする） */
-        .tag.drag-over {
-            border: 2px dashed #007bff;
-            background: #eef6ff;
-        }
+        .tag.dragging { opacity: 0.4; transform: scale(0.95); }
+        .tag.drag-over { border: 2px dashed #007bff; background: #eef6ff; }
 
-        .upper-section { background-color: #28a745; padding: 10px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; flex-grow: 1; width: 100%; box-sizing: border-box; position: relative; pointer-events: none; } /* ドラッグの邪魔にならないようポインター無効化 */
-        .upper-section.tax-blue,
-        .upper-section.category-blue { background-color: #31869B; }
-        .category-badge {
+        /* =========================================================
+           【こくらデザイン】
+           ========================================================= */
+        .tag.design-kokura .matsuo-top-banner,
+        .tag.design-kokura .matsuo-body,
+        .tag.design-kokura .matsuo-bottom { display: none; }
+
+        .tag.design-kokura .upper-section { background-color: #28a745; padding: 10px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; flex-grow: 1; width: 100%; box-sizing: border-box; position: relative; pointer-events: none; }
+        .tag.design-kokura .upper-section.tax-blue,
+        .tag.design-kokura .upper-section.category-blue { background-color: #31869B; }
+        .tag.design-kokura .category-badge {
             position: absolute;
             top: 4px;
             left: 4px;
@@ -89,7 +93,7 @@
             z-index: 10;
             box-sizing: border-box;
         }
-        .name { 
+        .tag.design-kokura .name { 
             font-weight: bold; 
             font-size: 15px; 
             line-height: 1.25;
@@ -103,20 +107,20 @@
             -webkit-box-orient: vertical; 
             box-sizing: border-box;
         }
-        .desc-container {
+        .tag.design-kokura .desc-container {
             width: 100%;
             margin-top: 6px;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-        .desc-divider {
+        .tag.design-kokura .desc-divider {
             width: 90%;
             height: 1px;
             background-color: #ffffff;
             margin: 0 auto 5px auto;
         }
-        .desc { 
+        .tag.design-kokura .desc { 
             font-size: 11px; 
             color: #f0f0f0; 
             padding: 0 10px;
@@ -128,16 +132,118 @@
             width: 100%;
             box-sizing: border-box;
         }
-        .lower-section { background: white; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; height: 55px; border-top: 1px solid #000; box-sizing: border-box; pointer-events: none; }
-        .barcode-area { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 55%; }
-        .barcode { width: 100%; height: 24px; }
-        .price-box { color: red; font-weight: bold; font-size: 24px; line-height: 1; text-align: right; }
-        .color-bar { width: 100%; height: 6px; pointer-events: none; }
-        .tag.wholesaler-daiko .color-bar { background-color: #ff69b4; }
-        .tag.wholesaler-toho .color-bar { background-color: #ffa500; }
-        .tag.wholesaler-shinko .color-bar { background-color: #28a745; }
-        .tag.wholesaler-other .color-bar { background-color: #6c757d; }
-        
+        .tag.design-kokura .lower-section { background: white; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; height: 55px; border-top: 1px solid #000; box-sizing: border-box; pointer-events: none; }
+        .tag.design-kokura .barcode-area { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 55%; }
+        .tag.design-kokura .barcode { width: 100%; height: 24px; }
+        .tag.design-kokura .price-box { color: red; font-weight: bold; font-size: 24px; line-height: 1; text-align: right; }
+        .tag.design-kokura .color-bar { width: 100%; height: 6px; pointer-events: none; }
+        .tag.design-kokura.wholesaler-daiko .color-bar { background-color: #ff69b4; }
+        .tag.design-kokura.wholesaler-toho .color-bar { background-color: #ffa500; }
+        .tag.design-kokura.wholesaler-shinko .color-bar { background-color: #28a745; }
+        .tag.design-kokura.wholesaler-other .color-bar { background-color: #6c757d; }
+
+        /* =========================================================
+           【まつおデザイン】
+           ========================================================= */
+        .tag.design-matsuo .upper-section,
+        .tag.design-matsuo .lower-section,
+        .tag.design-matsuo .color-bar { display: none; }
+
+        .tag.design-matsuo {
+            background: #ffffff;
+            padding: 6px 8px;
+            justify-content: space-between;
+        }
+
+        /* 上部オレンジ帯：商品説明文 */
+        .matsuo-top-banner {
+            background-color: #e67e22;
+            color: #111111;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.25;
+            padding: 4px 8px;
+            min-height: 22px;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            pointer-events: none;
+        }
+
+        /* 中央：商品名 + 下部に細い黒線 */
+        .matsuo-body {
+            flex-grow: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            pointer-events: none;
+        }
+        .matsuo-name {
+            color: #111111;
+            font-size: 19px;
+            font-weight: bold;
+            line-height: 1.2;
+            text-align: center;
+            padding: 4px 4px 6px 4px;
+            max-height: 54px;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            box-sizing: border-box;
+        }
+        .matsuo-divider {
+            width: 100%;
+            height: 1px;
+            background-color: #000000;
+        }
+
+        /* 下部：左にバーコード、右に赤太字価格＋太字「円」 */
+        .matsuo-bottom {
+            width: 100%;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 6px;
+            padding-top: 4px;
+            pointer-events: none;
+        }
+        .matsuo-barcode-area {
+            width: 38%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+        .matsuo-barcode-area .barcode {
+            width: 100%;
+            height: 28px;
+        }
+        .matsuo-price-area {
+            flex-grow: 1;
+            display: flex;
+            align-items: baseline;
+            justify-content: flex-end;
+            gap: 3px;
+            line-height: 1;
+        }
+        .matsuo-price-num {
+            color: #ff0000;
+            font-weight: bold;
+            font-size: 28px;
+            letter-spacing: -0.5px;
+        }
+        .matsuo-price-yen {
+            color: #111111;
+            font-weight: bold;
+            font-size: 15px;
+        }
+
         /* 値札中央にでっかく配置し、押しやすくした削除ボタン */
         .delete-btn { 
             position: absolute; 
@@ -171,7 +277,7 @@
             .no-print { display: none; }
             body { background: white; margin: 0; }
             .tag { border: 1px solid #000; cursor: default; }
-            .upper-section, .upper-section.tax-blue, .upper-section.category-blue, .desc-divider, .color-bar, .category-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .upper-section, .upper-section.tax-blue, .upper-section.category-blue, .desc-divider, .color-bar, .category-badge, .matsuo-top-banner, .matsuo-divider, .matsuo-price-num { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .delete-btn { display: none !important; }
         }
     </style>
@@ -191,6 +297,13 @@
         <label>数量: <input type="number" id="qtyInput" value="1" min="1" max="99" style="width: 50px; padding: 5px;"></label>
         
         <button onclick="addTags()" style="padding: 6px 12px; cursor: pointer;">値札追加</button>
+
+        <div class="design-switch-group">
+            <span class="design-switch-label">デザイン切替:</span>
+            <button id="btnKokura" class="design-btn active" onclick="switchAllTagsDesign('kokura')">こくら</button>
+            <button id="btnMatsuo" class="design-btn" onclick="switchAllTagsDesign('matsuo')">まつお</button>
+        </div>
+
         <button onclick="window.print()" style="padding: 6px 12px; cursor: pointer;">印刷する</button>
         <button onclick="document.getElementById('tagContainer').innerHTML=''" style="padding: 6px 12px; cursor: pointer; background: #ffcccc;">全削除</button>
     </div>
@@ -199,10 +312,12 @@
 
     <script>
         let productsCache = [];
+        let currentDesign = "kokura"; // "kokura" または "matsuo"
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxavToYkOGbRJE25AGUMHLoQKx5XHfowr-oTxXC9eN-P6dNQdD4xabTi510HUshWMmjZA/exec"; 
         const STORAGE_KEY_PRODUCTS = "hatchu_products";
 
         window.addEventListener('DOMContentLoaded', () => {
+            updateDesignButtons();
             fetchMasterFromCloud();
 
             const nameInput = document.getElementById('nameSearch');
@@ -214,11 +329,29 @@
             });
         });
 
+        function updateDesignButtons() {
+            const btnKokura = document.getElementById('btnKokura');
+            const btnMatsuo = document.getElementById('btnMatsuo');
+            if (btnKokura) btnKokura.classList.toggle('active', currentDesign === 'kokura');
+            if (btnMatsuo) btnMatsuo.classList.toggle('active', currentDesign === 'matsuo');
+        }
+
+        function switchAllTagsDesign(designName) {
+            currentDesign = (designName === 'matsuo') ? 'matsuo' : 'kokura';
+            updateDesignButtons();
+
+            const tags = document.querySelectorAll('#tagContainer .tag');
+            tags.forEach(tag => {
+                tag.classList.remove('design-kokura', 'design-matsuo');
+                tag.classList.add(`design-${currentDesign}`);
+            });
+        }
+
         function fetchMasterFromCloud() {
             const loadingOverlay = document.getElementById("loadingOverlay");
             if (loadingOverlay) loadingOverlay.style.display = "flex";
 
-            if (!GAS_API_URL || GAS_API_URL.includes("https://script.google.com/macros/s/AKfycbxavToYkOGbRJE25AGUMHLoQKx5XHfowr-oTxXC9eN-P6dNQdD4xabTi510HUshWMmjZA/exec") === false && GAS_API_URL === "") {
+            if (!GAS_API_URL || GAS_API_URL === "") {
                 loadFromLocalStorage();
                 return;
             }
@@ -323,10 +456,9 @@
 
             for (let i = 0; i < qty; i++) {
                 const div = document.createElement('div');
-                div.className = 'tag';
-                div.setAttribute('draggable', 'true'); // 💡 ドラッグ可能に設定
+                div.className = `tag design-${currentDesign}`;
+                div.setAttribute('draggable', 'true');
 
-                // 💡 ドラッグ＆ドロップのイベント設定
                 div.addEventListener('dragstart', handleDragStart);
                 div.addEventListener('dragend', handleDragEnd);
                 div.addEventListener('dragover', handleDragOver);
@@ -373,8 +505,12 @@
                     `;
                 }
 
+                const formattedPriceNum = parseInt(item.sellingPrice || 0).toLocaleString();
+
                 div.innerHTML = `
                     <button class="delete-btn" onclick="this.parentElement.remove()" title="この値札を削除">×</button>
+
+                    <!-- こくらデザイン用パーツ -->
                     <div class="${upperSectionClass}">
                         ${categoryHtml}
                         <div class="name">${displayName}</div>
@@ -382,21 +518,36 @@
                     </div>
                     <div class="lower-section">
                         <div class="barcode-area">
-                            <svg class="barcode"></svg>
+                            <svg class="barcode kokura-barcode"></svg>
                         </div>
-                        <div class="price-box">¥${parseInt(item.sellingPrice || 0).toLocaleString()}</div>
+                        <div class="price-box">¥${formattedPriceNum}</div>
                     </div>
                     <div class="color-bar"></div>
+
+                    <!-- まつおデザイン用パーツ -->
+                    <div class="matsuo-top-banner">${displayNote}</div>
+                    <div class="matsuo-body">
+                        <div class="matsuo-name">${displayName}</div>
+                        <div class="matsuo-divider"></div>
+                    </div>
+                    <div class="matsuo-bottom">
+                        <div class="matsuo-barcode-area">
+                            <svg class="barcode matsuo-barcode"></svg>
+                        </div>
+                        <div class="matsuo-price-area">
+                            <span class="matsuo-price-num">${formattedPriceNum}</span>
+                            <span class="matsuo-price-yen">円</span>
+                        </div>
+                    </div>
                 `;
                 container.appendChild(div);
 
-                const svg = div.querySelector('.barcode');
-                svg.setAttribute("preserveAspectRatio", "none");
+                const codeStr = String(item.jan || "").trim() || "000000";
 
-                const codeStr = String(item.jan || "").trim();
-
+                const kokuraSvg = div.querySelector('.kokura-barcode');
+                kokuraSvg.setAttribute("preserveAspectRatio", "none");
                 try {
-                    JsBarcode(svg, codeStr || "000000", { 
+                    JsBarcode(kokuraSvg, codeStr, { 
                         format: "code128", 
                         displayValue: false, 
                         width: 2.0, 
@@ -404,12 +555,26 @@
                         margin: 0
                     });
                 } catch(err) {
-                    console.error("バーコード生成エラー:", err);
+                    console.error("バーコード生成エラー (こくら):", err);
+                }
+
+                const matsuoSvg = div.querySelector('.matsuo-barcode');
+                matsuoSvg.setAttribute("preserveAspectRatio", "none");
+                try {
+                    JsBarcode(matsuoSvg, codeStr, { 
+                        format: "code128", 
+                        displayValue: false, 
+                        width: 1.8, 
+                        height: 28,
+                        margin: 0
+                    });
+                } catch(err) {
+                    console.error("バーコード生成エラー (まつお):", err);
                 }
             }
         }
 
-        // 💡 ドラッグ＆ドロップを制御する関数群
+        // ドラッグ＆ドロップを制御する関数群
         let draggedItem = null;
 
         function handleDragStart(e) {
