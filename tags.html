@@ -46,7 +46,7 @@
         }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
-        .tag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 204mm; max-width: 100%; box-sizing: border-box; }
+        .tag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 204mm; max-width: 100%; box-sizing: border-box; align-items: start; }
         
         /* ドラッグ対応のためのスタイル */
         .tag { 
@@ -143,7 +143,7 @@
         .tag.design-kokura.wholesaler-other .color-bar { background-color: #6c757d; }
 
         /* =========================================================
-           【まつおデザイン】
+           【まつおデザイン：余白を詰めて縦幅を短縮】
            ========================================================= */
         .tag.design-matsuo .upper-section,
         .tag.design-matsuo .lower-section,
@@ -151,7 +151,8 @@
 
         .tag.design-matsuo {
             background: #ffffff;
-            padding: 6px 8px;
+            height: 138px; /* 縦の長さを短縮 */
+            padding: 5px 8px;
             justify-content: space-between;
         }
 
@@ -161,9 +162,9 @@
             color: #111111;
             font-size: 12px;
             font-weight: 600;
-            line-height: 1.25;
-            padding: 4px 8px;
-            min-height: 22px;
+            line-height: 1.2;
+            padding: 3px 8px;
+            min-height: 20px;
             width: 100%;
             box-sizing: border-box;
             display: flex;
@@ -175,23 +176,24 @@
             pointer-events: none;
         }
 
-        /* 中央：商品名 + 下部に細い黒線 */
+        /* 中央：オレンジとの間隔・商品名・黒線との間隔を均一かつコンパクトに */
         .matsuo-body {
             flex-grow: 1;
             width: 100%;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            padding-top: 5px; /* オレンジ帯〜商品名の隙間（約5mm相当） */
             pointer-events: none;
         }
         .matsuo-name {
             color: #111111;
             font-size: 19px;
             font-weight: bold;
-            line-height: 1.2;
+            line-height: 1.18;
             text-align: center;
-            padding: 4px 4px 6px 4px;
-            max-height: 54px;
+            padding: 0 4px 5px 4px; /* 商品名〜黒線の隙間（約5mm相当） */
+            max-height: 50px;
             overflow: hidden;
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -204,14 +206,14 @@
             background-color: #000000;
         }
 
-        /* 下部：左にバーコード（約1.5倍幅）、右に赤太字価格＋太字「円」 */
+        /* 下部：黒線〜バーコードの間隔を約5mm縮めて配置 */
         .matsuo-bottom {
             width: 100%;
             display: flex;
             align-items: flex-end;
             justify-content: space-between;
             gap: 6px;
-            padding-top: 4px;
+            padding-top: 3px; /* 黒線〜バーコードの間隔を短縮 */
             pointer-events: none;
         }
         .matsuo-barcode-area {
@@ -223,7 +225,7 @@
         }
         .matsuo-barcode-area .barcode {
             width: 100%;
-            height: 28px;
+            height: 26px;
         }
         .matsuo-price-area {
             flex: 1;
@@ -568,7 +570,7 @@
                         format: "code128", 
                         displayValue: false, 
                         width: 2.0, 
-                        height: 28,
+                        height: 26,
                         margin: 0
                     });
                 } catch(err) {
